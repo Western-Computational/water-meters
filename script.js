@@ -7,6 +7,7 @@ $(document).ready(() => {
   setMenuClickListener();
   setSidenavCloseListener();
   getMeterData();
+  getWeatherData();
   //getMeterHtml();
   //renderChart();
 });
@@ -17,6 +18,7 @@ const gridEl = $('.grid');
 const SIDENAV_ACTIVE_CLASS = 'sidenav--active';
 const GRID_NO_SCROLL_CLASS = 'grid--noscroll';
 var realtimeData;
+var weatherData;
 
 function toggleClass(el, className) {
   if (el.hasClass(className)) {
@@ -310,11 +312,12 @@ function getMeterData() {
   });
 }
 
-function getMeterHtml() {
-  var request = 'https://io.ekmpush.com/readMeter?key=NjUyNDQ0Njc6Y2E5b0hRVGc&meters=350002883~350002885&ver=v4&fmt=html&cnt=15&fields=Pulse_Cnt_1~Pulse_Cnt_2~Pulse_Cnt_3';
+function getWeatherData() {
+  var request = 'https://api.openweathermap.org/data/2.5/onecall?lat=36.974117&lon=-122.030792&units=imperial&exclude=minutely,hourly,daily&appid=4530c5f0704984be70de48b60f3ecd42';
   callApi(request, function(apiObject) {
-    //var testme = JSON.stringify(apiObject, null, 4);
-    var testhtml = apiObject;
-    //document.getElementById("card1").innerHTML = testhtml;
+    weatherData = JSON.parse(apiObject);
+    let tempField = document.getElementById("local_temp");
+    let temp = Math.round(weatherData.current.temp);
+    tempField.innerHTML = temp.toString() + "&deg";
   });
 }
