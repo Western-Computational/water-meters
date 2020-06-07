@@ -190,6 +190,8 @@ function renderRealtimeChart(meter, pulse_cnt, chartdiv) {
   let meterIdx = meter === "350002883" ? 0 : meter === "350002885" ? 1 : 0;
   let pulseField = pulse_cnt === 1 ? "Pulse_Diff_1" :
     pulse_cnt === 2 ? "Pulse_Diff_2" : pulse_cnt === 3 ? "Pulse_Diff_3" : "Pulse_Diff_1";
+  let chartCard = document.getElementById(chartdiv).parentNode;
+  let cardHeader = chartCard.parentNode.querySelector('.card__header-title');
 
   var chart = am4core.create(chartdiv, am4charts.XYChart);
   chart.dateFormatter.inputDateFormat = "x";
@@ -198,13 +200,13 @@ function renderRealtimeChart(meter, pulse_cnt, chartdiv) {
 
   var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
   dateAxis.dataFields.date = "Time_Stamp_UTC_ms";
-  dateAxis.title.text = "Date-Time";
+  dateAxis.title.text = "Last 12 Hours";
 /*
   dateAxis.dateFormats.setKey("minute", "MMM dd\nHH:mm");
   dateAxis.periodChangeDateFormats.setKey("minute", "MMM dd\nHH:mm");
 */
   var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
-  valueAxis.title.text = "Pulses";
+  valueAxis.title.text = "Meter Pulses";
   valueAxis.cursorTooltipEnabled = false;
 
   var series = chart.series.push(new am4charts.ColumnSeries());
@@ -216,6 +218,10 @@ function renderRealtimeChart(meter, pulse_cnt, chartdiv) {
   series.dataFields.valueY = pulseField;
   series.tooltipText = "{valueY.formatNumber('#.')}";
   series.data = readSets[meterIdx].ReadData;
+
+  if (cardHeader) {
+    cardHeader.innerHTML = "<strong>" + series.name + "</strong>";
+  }
 }
 
 function toggleClass(el, className) {
@@ -296,12 +302,11 @@ function getMeterData() {
           setData[j].Pulse_Cnt_3 - setData[j-1].Pulse_Cnt_3 : 0;
       }
     }
-    //renderChart();
-    renderRealtimeChart("350002883", 1, "chartdiv1");
-    renderRealtimeChart("350002883", 2, "chartdiv2");
-    renderRealtimeChart("350002883", 3, "chartdiv3");
-    renderRealtimeChart("350002885", 1, "chartdiv4");
-    renderRealtimeChart("350002885", 2, "chartdiv5");
+    renderRealtimeChart("350002885", 2, "chartdiv1");
+    renderRealtimeChart("350002883", 1, "chartdiv2");
+    renderRealtimeChart("350002883", 2, "chartdiv3");
+    renderRealtimeChart("350002883", 3, "chartdiv4");
+    renderRealtimeChart("350002885", 1, "chartdiv5");
   });
 }
 
