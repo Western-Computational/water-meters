@@ -59,53 +59,61 @@ function setSidenavListeners() {
   });
 }
 
+function meterName(meter, pulse_cnt) {
+  if (meter === "350002883") {
+    if (pulse_cnt === 1) {
+      return "301";
+    } else if (pulse_cnt === 2) {
+      return "303";
+    } else if (pulse_cnt === 3) {
+      return "305";
+    }
+  } else if (meter === "350002885") {
+    if (pulse_cnt === 1) {
+      return "307";
+    } else if (pulse_cnt === 2) {
+      return "Garden";
+    }
+  }
+  return "?";
+}
+
+function meterColor(meter, pulse_cnt) {
+  if (meter === "350002883") {
+    if (pulse_cnt === 1) {
+      return "#c70039"; //"301";
+    } else if (pulse_cnt === 2) {
+      return "#8abaf0"; //"303";
+    } else if (pulse_cnt === 3) {
+      return "#a26de1"; // "305";
+    }
+  } else if (meter === "350002885") {
+    if (pulse_cnt === 1) {
+      return "#98d356"; //"307";
+    } else if (pulse_cnt === 2) {
+      return "#814e25"; //"Garden";
+    }
+  }
+  return "#000000";
+}
+
 // Draw the chart
 function renderChart() {
   var readSets = meterData.readMeter.ReadSet;
-  var chartData = new Array(readSets.length);
   for (var i = 0; i < readSets.length; i++) {
     var setData = readSets[i].ReadData;
-    chartData[i] = new Array(3);
-    chartData[i][0] = [];
-    chartData[i][1] = [];
-    chartData[i][2] = [];
-    for (var j = 0; j < setData.length; j++) {
-      chartData[i][0].push({
-        "date": setData[j].Time_Stamp_UTC_ms,
-        "pulses": setData[j].Pulse_Cnt_1
-      });
-      chartData[i][1].push({
-        "date": setData[j].Time_Stamp_UTC_ms,
-        "pulses": setData[j].Pulse_Cnt_2
-      });
-      chartData[i][2].push({
-        "date": setData[j].Time_Stamp_UTC_ms,
-        "pulses": setData[j].Pulse_Cnt_3
-      });
-    }
+    setData.sort(function(a,b) {
+      return (a.Time_Stamp_UTC_ms - b.Time_Stamp_UTC_ms)
+    });
   }
-  chartData[0][0].sort(function(a,b) {
-    return (a.date - b.date)
-  });
-  chartData[0][1].sort(function(a,b) {
-    return (a.date - b.date)
-  });
-  chartData[0][2].sort(function(a,b) {
-    return (a.date - b.date)
-  });
-  chartData[1][0].sort(function(a,b) {
-    return (a.date - b.date)
-  });
-  chartData[1][1].sort(function(a,b) {
-    return (a.date - b.date)
-  });
 
   var chart = am4core.create("chartdiv", am4charts.XYChart);
   chart.dateFormatter.inputDateFormat = "x";
-  //chart.cursor = new am4charts.XYCursor();
+  chart.cursor = new am4charts.XYCursor();
+  chart.cursor.lineY.disabled = true;
 
   var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
-  dateAxis.dataFields.date = "date";
+  dateAxis.dataFields.date = "Time_Stamp_UTC_ms";
   dateAxis.title.text = "Date-Time";
 /*
   dateAxis.dateFormats.setKey("minute", "MMM dd\nHH:mm");
@@ -113,13 +121,17 @@ function renderChart() {
 */
   var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
   valueAxis.title.text = "Pulses";
+  valueAxis.cursorTooltipEnabled = false;
 
   var series1 = chart.series.push(new am4charts.LineSeries());
-  series1.dataFields.valueY = "pulses";
-  series1.dataFields.dateX = "date";
-  //series.dataFields.valueX = "date";
-  series1.tooltipText = "{valueX.formatNumber('#.00')}: {valueY.formatNumber('#.00')}";
-  series1.data = chartData[0][0];
+  series1.name = meterName(readSets[0].Meter, 1);
+  var strokeColor = meterColor(readSets[0].Meter, 1);
+  series1.stroke = am4core.color(strokeColor);
+  series1.fill = am4core.color(strokeColor);
+  series1.dataFields.dateX = "Time_Stamp_UTC_ms";
+  series1.dataFields.valueY = "Pulse_Cnt_1";
+  series1.tooltipText = "{name}: {valueY.formatNumber('#.')}";
+  series1.data = readSets[0].ReadData;
 
   var bullet = series1.bullets.push(new am4charts.Bullet());
   var square = bullet.createChild(am4core.Rectangle);
@@ -129,99 +141,48 @@ function renderChart() {
   square.verticalCenter = "middle";
 
   var series2 = chart.series.push(new am4charts.LineSeries());
-  series2.dataFields.valueY = "pulses";
-  series2.dataFields.dateX = "date";
-  series2.tooltipText = "{dateX.formatDate('yyyy-mm')}: {valueY.formatNumber('#.00')}";
-  series2.data = chartData[0][1];
+  series2.name = meterName(readSets[0].Meter, 2);
+  strokeColor = meterColor(readSets[0].Meter, 2);
+  series2.stroke = am4core.color(strokeColor);
+  series2.fill = am4core.color(strokeColor);
+  series2.dataFields.dateX = "Time_Stamp_UTC_ms";
+  series2.dataFields.valueY = "Pulse_Cnt_2";
+  series2.tooltipText = "{name}: {valueY.formatNumber('#.')}";
+  series2.data = readSets[0].ReadData;
   series2.bullets.push(bullet);
 
   var series3 = chart.series.push(new am4charts.LineSeries());
-  series3.dataFields.valueY = "pulses";
-  series3.dataFields.dateX = "date";
-  series3.tooltipText = "{dateX.formatDate('yyyy-mm')}: {valueY.formatNumber('#.00')}";
-  series3.data = chartData[0][2];
+  series3.name = meterName(readSets[0].Meter, 3);
+  strokeColor = meterColor(readSets[0].Meter, 3);
+  series3.stroke = am4core.color(strokeColor);
+  series3.fill = am4core.color(strokeColor);
+  series3.dataFields.dateX = "Time_Stamp_UTC_ms";
+  series3.dataFields.valueY = "Pulse_Cnt_3";
+  series3.tooltipText = "{name}: {valueY.formatNumber('#.')}";
+  series3.data = readSets[0].ReadData;
   series3.bullets.push(bullet);
 
   var series4 = chart.series.push(new am4charts.LineSeries());
-  series4.dataFields.valueY = "pulses";
-  series4.dataFields.dateX = "date";
-  series4.tooltipText = "{dateX.formatDate('yyyy-mm')}: {valueY.formatNumber('#.00')}";
-  series4.data = chartData[1][0];
+  series4.name = meterName(readSets[1].Meter, 1);
+  strokeColor = meterColor(readSets[1].Meter, 1);
+  series4.stroke = am4core.color(strokeColor);
+  series4.fill = am4core.color(strokeColor);
+  series4.dataFields.dateX = "Time_Stamp_UTC_ms";
+  series4.dataFields.valueY = "Pulse_Cnt_1";
+  series4.tooltipText = "{name}: {valueY.formatNumber('#.')}";
+  series4.data = readSets[1].ReadData;
   series4.bullets.push(bullet);
 
   var series5 = chart.series.push(new am4charts.LineSeries());
-  series5.dataFields.valueY = "pulses";
-  series5.dataFields.dateX = "date";
-  series5.tooltipText = "{dateX.formatDate('yyyy-mm')}: {valueY.formatNumber('#.00')}";
-  series5.data = chartData[1][1];
+  series5.name = meterName(readSets[1].Meter, 2);
+  strokeColor = meterColor(readSets[1].Meter, 2);
+  series5.stroke = am4core.color(strokeColor);
+  series5.fill = am4core.color(strokeColor);
+  series5.dataFields.dateX = "Time_Stamp_UTC_ms";
+  series5.dataFields.valueY = "Pulse_Cnt_2";
+  series5.tooltipText = "{name}: {valueY.formatNumber('#.')}";
+  series5.data = readSets[1].ReadData;
   series5.bullets.push(bullet);
-
-  /*
-  const chart_orig = AmCharts.makeChart( "chartdiv", {
-    "type": "serial",
-    "theme": "light",
-    "dataProvider": [ {
-      "month": "Jan",
-      "visits": 2025
-    }, {
-      "month": "Feb",
-      "visits": 1882
-    }, {
-      "month": "Mar",
-      "visits": 1809
-    }, {
-      "month": "Apr",
-      "visits": 1322
-    }, {
-      "month": "May",
-      "visits": 1122
-    }, {
-      "month": "Jun",
-      "visits": 1114
-    }, {
-      "month": "Jul",
-      "visits": 984
-    }, {
-      "month": "Aug",
-      "visits": 711
-    }, {
-      "month": "Sept",
-      "visits": 665
-    }, {
-      "month": "Oct",
-      "visits": 580
-    } ],
-    "valueAxes": [ {
-      "gridColor": "#FFFFFF",
-      "gridAlpha": 0.2,
-      "dashLength": 0
-    } ],
-    "gridAboveGraphs": true,
-    "startDuration": 1,
-    "graphs": [ {
-      "balloonText": "[[category]]: <b>[[value]]</b>",
-      "fillAlphas": 0.8,
-      "lineAlpha": 0.2,
-      "type": "column",
-      "valueField": "visits"
-    } ],
-    "chartCursor": {
-      "categoryBalloonEnabled": false,
-      "cursorAlpha": 0,
-      "zoomable": false
-    },
-    "categoryField": "month",
-    "categoryAxis": {
-      "gridPosition": "start",
-      "gridAlpha": 0,
-      "tickPosition": "start",
-      "tickLength": 20
-    },
-    "export": {
-      "enabled": false
-    }
-  });
-  */
 }
 
 function toggleClass(el, className) {
@@ -277,20 +238,20 @@ function callApi(apiRequest,callback) {
 }
 
 function getMeterData() {
-  var request = 'https://io.ekmpush.com/readMeter?key=NjUyNDQ0Njc6Y2E5b0hRVGc&meters=350002883~350002885&ver=v4&fmt=json&cnt=10&fields=Pulse_Cnt_1~Pulse_Cnt_2~Pulse_Cnt_3';
+  var request = 'https://io.ekmpush.com/readMeter?key=NjUyNDQ0Njc6Y2E5b0hRVGc&meters=350002883~350002885&ver=v4&fmt=json&cnt=15&fields=Pulse_Cnt_1~Pulse_Cnt_2~Pulse_Cnt_3';
   callApi(request, function(apiObject) {
     meterData = JSON.parse(apiObject);
     var testjson = JSON.stringify(meterData, null, 4);
-    document.getElementById("card2").innerText = testjson;
+    //document.getElementById("card2").innerText = testjson;
     renderChart();
   });
 }
 
 function getMeterHtml() {
-  var request = 'https://io.ekmpush.com/readMeter?key=NjUyNDQ0Njc6Y2E5b0hRVGc&meters=350002883~350002885&ver=v4&fmt=html&cnt=10&fields=Pulse_Cnt_1~Pulse_Cnt_2~Pulse_Cnt_3';
+  var request = 'https://io.ekmpush.com/readMeter?key=NjUyNDQ0Njc6Y2E5b0hRVGc&meters=350002883~350002885&ver=v4&fmt=html&cnt=15&fields=Pulse_Cnt_1~Pulse_Cnt_2~Pulse_Cnt_3';
   callApi(request, function(apiObject) {
     //var testme = JSON.stringify(apiObject, null, 4);
     var testhtml = apiObject;
-    document.getElementById("card1").innerHTML = testhtml;
+    //document.getElementById("card1").innerHTML = testhtml;
   });
 }
