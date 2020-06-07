@@ -7,7 +7,7 @@ $(document).ready(() => {
   setMenuClickListener();
   setSidenavCloseListener();
   getMeterData();
-  getMeterHtml();
+  //getMeterHtml();
   //renderChart();
 });
 
@@ -16,7 +16,7 @@ const sidenavEl = $('.sidenav');
 const gridEl = $('.grid');
 const SIDENAV_ACTIVE_CLASS = 'sidenav--active';
 const GRID_NO_SCROLL_CLASS = 'grid--noscroll';
-var meterData;
+var realtimeData;
 
 function toggleClass(el, className) {
   if (el.hasClass(className)) {
@@ -99,15 +99,9 @@ function meterColor(meter, pulse_cnt) {
 
 // Draw the chart
 function renderChart() {
-  var readSets = meterData.readMeter.ReadSet;
-  for (var i = 0; i < readSets.length; i++) {
-    var setData = readSets[i].ReadData;
-    setData.sort(function(a,b) {
-      return (a.Time_Stamp_UTC_ms - b.Time_Stamp_UTC_ms)
-    });
-  }
+  var readSets = realtimeData.readMeter.ReadSet;
 
-  var chart = am4core.create("chartdiv", am4charts.XYChart);
+  var chart = am4core.create("chartdiv1", am4charts.XYChart);
   chart.dateFormatter.inputDateFormat = "x";
   chart.cursor = new am4charts.XYCursor();
   chart.cursor.lineY.disabled = true;
@@ -129,27 +123,30 @@ function renderChart() {
   series1.stroke = am4core.color(strokeColor);
   series1.fill = am4core.color(strokeColor);
   series1.dataFields.dateX = "Time_Stamp_UTC_ms";
-  series1.dataFields.valueY = "Pulse_Cnt_1";
+  //series1.dataFields.valueY = "Pulse_Cnt_1";
+  series1.dataFields.valueY = "Pulse_Diff_1";
   series1.tooltipText = "{name}: {valueY.formatNumber('#.')}";
   series1.data = readSets[0].ReadData;
 
+/*
   var bullet = series1.bullets.push(new am4charts.Bullet());
   var square = bullet.createChild(am4core.Rectangle);
   square.width = 10;
   square.height = 10;
   square.horizontalCenter = "middle";
   square.verticalCenter = "middle";
-
+*/
   var series2 = chart.series.push(new am4charts.LineSeries());
   series2.name = meterName(readSets[0].Meter, 2);
   strokeColor = meterColor(readSets[0].Meter, 2);
   series2.stroke = am4core.color(strokeColor);
   series2.fill = am4core.color(strokeColor);
   series2.dataFields.dateX = "Time_Stamp_UTC_ms";
-  series2.dataFields.valueY = "Pulse_Cnt_2";
+  //series2.dataFields.valueY = "Pulse_Cnt_2";
+  series2.dataFields.valueY = "Pulse_Diff_2";
   series2.tooltipText = "{name}: {valueY.formatNumber('#.')}";
   series2.data = readSets[0].ReadData;
-  series2.bullets.push(bullet);
+  //series2.bullets.push(bullet);
 
   var series3 = chart.series.push(new am4charts.LineSeries());
   series3.name = meterName(readSets[0].Meter, 3);
@@ -157,10 +154,11 @@ function renderChart() {
   series3.stroke = am4core.color(strokeColor);
   series3.fill = am4core.color(strokeColor);
   series3.dataFields.dateX = "Time_Stamp_UTC_ms";
-  series3.dataFields.valueY = "Pulse_Cnt_3";
+  //series3.dataFields.valueY = "Pulse_Cnt_3";
+  series3.dataFields.valueY = "Pulse_Diff_3";
   series3.tooltipText = "{name}: {valueY.formatNumber('#.')}";
   series3.data = readSets[0].ReadData;
-  series3.bullets.push(bullet);
+  //series3.bullets.push(bullet);
 
   var series4 = chart.series.push(new am4charts.LineSeries());
   series4.name = meterName(readSets[1].Meter, 1);
@@ -168,10 +166,11 @@ function renderChart() {
   series4.stroke = am4core.color(strokeColor);
   series4.fill = am4core.color(strokeColor);
   series4.dataFields.dateX = "Time_Stamp_UTC_ms";
-  series4.dataFields.valueY = "Pulse_Cnt_1";
+  //series4.dataFields.valueY = "Pulse_Cnt_1";
+  series4.dataFields.valueY = "Pulse_Diff_1";
   series4.tooltipText = "{name}: {valueY.formatNumber('#.')}";
   series4.data = readSets[1].ReadData;
-  series4.bullets.push(bullet);
+  //series4.bullets.push(bullet);
 
   var series5 = chart.series.push(new am4charts.LineSeries());
   series5.name = meterName(readSets[1].Meter, 2);
@@ -179,10 +178,44 @@ function renderChart() {
   series5.stroke = am4core.color(strokeColor);
   series5.fill = am4core.color(strokeColor);
   series5.dataFields.dateX = "Time_Stamp_UTC_ms";
-  series5.dataFields.valueY = "Pulse_Cnt_2";
+  //series5.dataFields.valueY = "Pulse_Cnt_2";
+  series5.dataFields.valueY = "Pulse_Diff_2";
   series5.tooltipText = "{name}: {valueY.formatNumber('#.')}";
   series5.data = readSets[1].ReadData;
-  series5.bullets.push(bullet);
+  //series5.bullets.push(bullet);
+}
+
+function renderRealtimeChart(meter, pulse_cnt, chartdiv) {
+  let readSets = realtimeData.readMeter.ReadSet;
+  let meterIdx = meter === "350002883" ? 0 : meter === "350002885" ? 1 : 0;
+  let pulseField = pulse_cnt === 1 ? "Pulse_Diff_1" :
+    pulse_cnt === 2 ? "Pulse_Diff_2" : pulse_cnt === 3 ? "Pulse_Diff_3" : "Pulse_Diff_1";
+
+  var chart = am4core.create(chartdiv, am4charts.XYChart);
+  chart.dateFormatter.inputDateFormat = "x";
+  chart.cursor = new am4charts.XYCursor();
+  chart.cursor.lineY.disabled = true;
+
+  var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
+  dateAxis.dataFields.date = "Time_Stamp_UTC_ms";
+  dateAxis.title.text = "Date-Time";
+/*
+  dateAxis.dateFormats.setKey("minute", "MMM dd\nHH:mm");
+  dateAxis.periodChangeDateFormats.setKey("minute", "MMM dd\nHH:mm");
+*/
+  var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+  valueAxis.title.text = "Pulses";
+  valueAxis.cursorTooltipEnabled = false;
+
+  var series = chart.series.push(new am4charts.ColumnSeries());
+  series.name = meterName(readSets[meterIdx].Meter, pulse_cnt);
+  var strokeColor = meterColor(readSets[meterIdx].Meter, pulse_cnt);
+  series.stroke = am4core.color(strokeColor);
+  series.fill = am4core.color(strokeColor);
+  series.dataFields.dateX = "Time_Stamp_UTC_ms";
+  series.dataFields.valueY = pulseField;
+  series.tooltipText = "{valueY.formatNumber('#.')}";
+  series.data = readSets[meterIdx].ReadData;
 }
 
 function toggleClass(el, className) {
@@ -238,12 +271,37 @@ function callApi(apiRequest,callback) {
 }
 
 function getMeterData() {
-  var request = 'https://io.ekmpush.com/readMeter?key=NjUyNDQ0Njc6Y2E5b0hRVGc&meters=350002883~350002885&ver=v4&fmt=json&cnt=15&fields=Pulse_Cnt_1~Pulse_Cnt_2~Pulse_Cnt_3';
+  let request = 'https://io.ekmpush.com/readMeter?key=NjUyNDQ0Njc6Y2E5b0hRVGc&meters=350002883~350002885&ver=v4&fmt=json&cnt=720&fields=Pulse_Cnt_1~Pulse_Cnt_2~Pulse_Cnt_3';
   callApi(request, function(apiObject) {
-    meterData = JSON.parse(apiObject);
-    var testjson = JSON.stringify(meterData, null, 4);
-    //document.getElementById("card2").innerText = testjson;
-    renderChart();
+    realtimeData = JSON.parse(apiObject);
+    let readSets = realtimeData.readMeter.ReadSet;
+
+    // Sort all data by ascending time
+    for (let i = 0; i < readSets.length; i++) {
+      let setData = readSets[i].ReadData;
+      setData.sort(function(a,b) {
+        return (a.Time_Stamp_UTC_ms - b.Time_Stamp_UTC_ms)
+      });
+    }
+
+    // Add a field for delta pulses
+    for (let i = 0; i < readSets.length; i++) {
+      let setData = readSets[i].ReadData;
+      for (let j = 0; j < setData.length; j++) {
+        setData[j].Pulse_Diff_1 = j > 0 ?
+          setData[j].Pulse_Cnt_1 - setData[j-1].Pulse_Cnt_1 : 0;
+        setData[j].Pulse_Diff_2 = j > 0 ?
+          setData[j].Pulse_Cnt_2 - setData[j-1].Pulse_Cnt_2 : 0;
+        setData[j].Pulse_Diff_3 = j > 0 ?
+          setData[j].Pulse_Cnt_3 - setData[j-1].Pulse_Cnt_3 : 0;
+      }
+    }
+    //renderChart();
+    renderRealtimeChart("350002883", 1, "chartdiv1");
+    renderRealtimeChart("350002883", 2, "chartdiv2");
+    renderRealtimeChart("350002883", 3, "chartdiv3");
+    renderRealtimeChart("350002885", 1, "chartdiv4");
+    renderRealtimeChart("350002885", 2, "chartdiv5");
   });
 }
 
