@@ -190,8 +190,8 @@ function renderChart() {
 function renderRealtimeChart(meter, pulse_cnt, chartdiv) {
   let readSets = realtimeData.readMeter.ReadSet;
   let meterIdx = meter === "350002883" ? 0 : meter === "350002885" ? 1 : 0;
-  let pulseField = pulse_cnt === 1 ? "Pulse_Diff_1" :
-    pulse_cnt === 2 ? "Pulse_Diff_2" : pulse_cnt === 3 ? "Pulse_Diff_3" : "Pulse_Diff_1";
+  let pulseField = pulse_cnt === 1 ? "Volume_Diff_1" :
+    pulse_cnt === 2 ? "Volume_Diff_2" : pulse_cnt === 3 ? "Volume_Diff_3" : "Volume_Diff_1";
   let chartCard = document.getElementById(chartdiv).parentNode;
   let cardHeader = chartCard.parentNode.querySelector('.card__header-title');
 
@@ -208,7 +208,7 @@ function renderRealtimeChart(meter, pulse_cnt, chartdiv) {
   dateAxis.periodChangeDateFormats.setKey("minute", "MMM dd\nHH:mm");
 */
   var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
-  valueAxis.title.text = "Meter Pulses";
+  valueAxis.title.text = "Gallons";
   valueAxis.cursorTooltipEnabled = false;
 
   var series = chart.series.push(new am4charts.ColumnSeries());
@@ -218,7 +218,7 @@ function renderRealtimeChart(meter, pulse_cnt, chartdiv) {
   series.fill = am4core.color(strokeColor);
   series.dataFields.dateX = "Time_Stamp_UTC_ms";
   series.dataFields.valueY = pulseField;
-  series.tooltipText = "{valueY.formatNumber('#.')}";
+  series.tooltipText = "{valueY.formatNumber('#.00')}";
   series.data = readSets[meterIdx].ReadData;
 
   if (cardHeader) {
@@ -278,6 +278,10 @@ function callApi(apiRequest,callback) {
     xhttp.send();
 }
 
+function getVolumeFromPulseCount(pulseCount) {
+    return pulseCount * 0.748052;
+}
+
 function getMeterData() {
   let request = 'https://io.ekmpush.com/readMeter?key=NjUyNDQ0Njc6Y2E5b0hRVGc&meters=350002883~350002885&ver=v4&fmt=json&cnt=720&fields=Pulse_Cnt_1~Pulse_Cnt_2~Pulse_Cnt_3';
   callApi(request, function(apiObject) {
@@ -292,7 +296,7 @@ function getMeterData() {
       });
     }
 
-    // Add a field for delta pulses
+    // Add a field for delta pulses and gallons/cu ft
     for (let i = 0; i < readSets.length; i++) {
       let setData = readSets[i].ReadData;
       for (let j = 0; j < setData.length; j++) {
@@ -302,6 +306,12 @@ function getMeterData() {
           setData[j].Pulse_Cnt_2 - setData[j-1].Pulse_Cnt_2 : 0;
         setData[j].Pulse_Diff_3 = j > 0 ?
           setData[j].Pulse_Cnt_3 - setData[j-1].Pulse_Cnt_3 : 0;
+        setData[j].Volume_1 = getVolumeFromPulseCount(setData[j].Pulse_Cnt_1);
+        setData[j].Volume_2 = getVolumeFromPulseCount(setData[j].Pulse_Cnt_2);
+        setData[j].Volume_3 = getVolumeFromPulseCount(setData[j].Pulse_Cnt_3);
+        setData[j].Volume_Diff_1 = getVolumeFromPulseCount(setData[j].Pulse_Diff_1);
+        setData[j].Volume_Diff_2 = getVolumeFromPulseCount(setData[j].Pulse_Diff_2);
+        setData[j].Volume_Diff_3 = getVolumeFromPulseCount(setData[j].Pulse_Diff_3);
       }
     }
     renderRealtimeChart("350002885", 2, "chartdiv1");

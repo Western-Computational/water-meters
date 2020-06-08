@@ -283,8 +283,8 @@ a {
   position: relative;
   display: flex;
   justify-content: space-between;
-  height: 250px;
-  color: #FFF;
+  height: 300px;
+  color: #000;
   background-size: cover;
   background-image: url("mission_drawing.jpg");
   margin-bottom: 20px; }
