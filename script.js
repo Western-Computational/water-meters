@@ -13,12 +13,12 @@ $(document).ready(() => {
 });
 
 // Set constants and grab needed elements
+var App = window.App || {};
 const sidenavEl = $('.sidenav');
 const gridEl = $('.grid');
 const SIDENAV_ACTIVE_CLASS = 'sidenav--active';
 const GRID_NO_SCROLL_CLASS = 'grid--noscroll';
-var realtimeData;
-var weatherData;
+const data = new App.DataStore();
 
 function toggleClass(el, className) {
   if (el.hasClass(className)) {
@@ -101,7 +101,7 @@ function meterColor(meter, pulse_cnt) {
 
 // Draw the chart
 function renderChart() {
-  var readSets = realtimeData.readMeter.ReadSet;
+  var readSets = data.data.waterData.realtimeData.readMeter.ReadSet;
 
   var chart = am4core.create("chartdiv1", am4charts.XYChart);
   chart.dateFormatter.inputDateFormat = "x";
@@ -188,7 +188,7 @@ function renderChart() {
 }
 
 function renderRealtimeChart(meter, pulse_cnt, chartdiv) {
-  let readSets = realtimeData.readMeter.ReadSet;
+  let readSets = data.data.waterData.realtimeData.readMeter.ReadSet;
   let meterIdx = meter === "350002883" ? 0 : meter === "350002885" ? 1 : 0;
   let pulseField = pulse_cnt === 1 ? "Volume_Diff_1" :
     pulse_cnt === 2 ? "Volume_Diff_2" : pulse_cnt === 3 ? "Volume_Diff_3" : "Volume_Diff_1";
@@ -263,57 +263,8 @@ function setSidenavCloseListener() {
   });
 }
 
-// This code accesses the apiRequest URL and converts
-// the contents to a usable JSON object named apiObject
-function callApi(apiRequest,callback) {
-    var xhttp = new XMLHttpRequest();
-
-    xhttp.onreadystatechange = function() {
-      if (xhttp.readyState == 4 && xhttp.status == 200) {
-        //var jsonObject = JSON.parse(xhttp.responseText);
-        callback(xhttp.responseText);
-      }
-    };
-    xhttp.open("GET", apiRequest, true);
-    xhttp.send();
-}
-
-function getVolumeFromPulseCount(pulseCount) {
-    return pulseCount * 0.748052;
-}
-
 function getMeterData() {
-  let request = 'https://io.ekmpush.com/readMeter?key=NjUyNDQ0Njc6Y2E5b0hRVGc&meters=350002883~350002885&ver=v4&fmt=json&cnt=720&fields=Pulse_Cnt_1~Pulse_Cnt_2~Pulse_Cnt_3';
-  callApi(request, function(apiObject) {
-    realtimeData = JSON.parse(apiObject);
-    let readSets = realtimeData.readMeter.ReadSet;
-
-    // Sort all data by ascending time
-    for (let i = 0; i < readSets.length; i++) {
-      let setData = readSets[i].ReadData;
-      setData.sort(function(a,b) {
-        return (a.Time_Stamp_UTC_ms - b.Time_Stamp_UTC_ms)
-      });
-    }
-
-    // Add a field for delta pulses and gallons/cu ft
-    for (let i = 0; i < readSets.length; i++) {
-      let setData = readSets[i].ReadData;
-      for (let j = 0; j < setData.length; j++) {
-        setData[j].Pulse_Diff_1 = j > 0 ?
-          setData[j].Pulse_Cnt_1 - setData[j-1].Pulse_Cnt_1 : 0;
-        setData[j].Pulse_Diff_2 = j > 0 ?
-          setData[j].Pulse_Cnt_2 - setData[j-1].Pulse_Cnt_2 : 0;
-        setData[j].Pulse_Diff_3 = j > 0 ?
-          setData[j].Pulse_Cnt_3 - setData[j-1].Pulse_Cnt_3 : 0;
-        setData[j].Volume_1 = getVolumeFromPulseCount(setData[j].Pulse_Cnt_1);
-        setData[j].Volume_2 = getVolumeFromPulseCount(setData[j].Pulse_Cnt_2);
-        setData[j].Volume_3 = getVolumeFromPulseCount(setData[j].Pulse_Cnt_3);
-        setData[j].Volume_Diff_1 = getVolumeFromPulseCount(setData[j].Pulse_Diff_1);
-        setData[j].Volume_Diff_2 = getVolumeFromPulseCount(setData[j].Pulse_Diff_2);
-        setData[j].Volume_Diff_3 = getVolumeFromPulseCount(setData[j].Pulse_Diff_3);
-      }
-    }
+  data.getWaterData(function() {
     renderRealtimeChart("350002885", 2, "chartdiv1");
     renderRealtimeChart("350002883", 1, "chartdiv2");
     renderRealtimeChart("350002883", 2, "chartdiv3");
@@ -323,11 +274,9 @@ function getMeterData() {
 }
 
 function getWeatherData() {
-  var request = 'https://api.openweathermap.org/data/2.5/onecall?lat=36.974117&lon=-122.030792&units=imperial&exclude=minutely,hourly,daily&appid=4530c5f0704984be70de48b60f3ecd42';
-  callApi(request, function(apiObject) {
-    weatherData = JSON.parse(apiObject);
+  data.getWeatherData(function(apiObject) {
     let tempField = document.getElementById("local_temp");
-    let temp = Math.round(weatherData.current.temp);
+    let temp = Math.round(data.data.weatherData.current.temp);
     tempField.innerHTML = temp.toString() + "&deg";
   });
 }
