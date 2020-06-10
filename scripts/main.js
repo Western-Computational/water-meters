@@ -32,8 +32,8 @@
   function renderRealtimeChart(meter, pulse_cnt, chartdiv) {
     let readSets = dataStore.data.waterData.realtimeData.readMeter.ReadSet;
     let meterIdx = meter === "350002883" ? 0 : meter === "350002885" ? 1 : 0;
-    let pulseField = pulse_cnt === 1 ? "Volume_Diff_1" :
-      pulse_cnt === 2 ? "Volume_Diff_2" : pulse_cnt === 3 ? "Volume_Diff_3" : "Volume_Diff_1";
+    let pulseField = pulse_cnt === 1 ? "Volume_1_Diff" :
+      pulse_cnt === 2 ? "Volume_2_Diff" : pulse_cnt === 3 ? "Volume_3_Diff" : "Volume_1_Diff";
     let chartCard = document.getElementById(chartdiv).parentNode;
     let cardHeader = chartCard.parentNode.querySelector('.card__header-title');
 
@@ -135,7 +135,7 @@
     series1.fill = am4core.color(strokeColor);
     series1.dataFields.dateX = "Time_Stamp_UTC_ms";
     //series1.dataFields.valueY = "Pulse_Cnt_1";
-    series1.dataFields.valueY = "Pulse_Diff_1";
+    series1.dataFields.valueY = "Pulse_Cnt_1_Diff";
     series1.tooltipText = "{name}: {valueY.formatNumber('#.')}";
     series1.data = readSets[0].ReadData;
 
@@ -154,7 +154,7 @@
     series2.fill = am4core.color(strokeColor);
     series2.dataFields.dateX = "Time_Stamp_UTC_ms";
     //series2.dataFields.valueY = "Pulse_Cnt_2";
-    series2.dataFields.valueY = "Pulse_Diff_2";
+    series2.dataFields.valueY = "Pulse_Cnt_2_Diff";
     series2.tooltipText = "{name}: {valueY.formatNumber('#.')}";
     series2.data = readSets[0].ReadData;
     //series2.bullets.push(bullet);
@@ -166,7 +166,7 @@
     series3.fill = am4core.color(strokeColor);
     series3.dataFields.dateX = "Time_Stamp_UTC_ms";
     //series3.dataFields.valueY = "Pulse_Cnt_3";
-    series3.dataFields.valueY = "Pulse_Diff_3";
+    series3.dataFields.valueY = "Pulse_Cnt_3_Diff";
     series3.tooltipText = "{name}: {valueY.formatNumber('#.')}";
     series3.data = readSets[0].ReadData;
     //series3.bullets.push(bullet);
@@ -178,7 +178,7 @@
     series4.fill = am4core.color(strokeColor);
     series4.dataFields.dateX = "Time_Stamp_UTC_ms";
     //series4.dataFields.valueY = "Pulse_Cnt_1";
-    series4.dataFields.valueY = "Pulse_Diff_1";
+    series4.dataFields.valueY = "Pulse_Cnt_1_Diff";
     series4.tooltipText = "{name}: {valueY.formatNumber('#.')}";
     series4.data = readSets[1].ReadData;
     //series4.bullets.push(bullet);
@@ -190,7 +190,7 @@
     series5.fill = am4core.color(strokeColor);
     series5.dataFields.dateX = "Time_Stamp_UTC_ms";
     //series5.dataFields.valueY = "Pulse_Cnt_2";
-    series5.dataFields.valueY = "Pulse_Diff_2";
+    series5.dataFields.valueY = "Pulse_Cnt_2_Diff";
     series5.tooltipText = "{name}: {valueY.formatNumber('#.')}";
     series5.data = readSets[1].ReadData;
     //series5.bullets.push(bullet);

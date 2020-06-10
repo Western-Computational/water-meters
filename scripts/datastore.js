@@ -17,10 +17,12 @@
     this.callApi(realtimeRequest, function(apiObject) {
       this.data.waterData.realtimeData = JSON.parse(apiObject);
       this.processWaterData();
-      callback();
+      let summaryRequest = "https://summary.ekmpush.com/summary?meters=350002883~350002885&key=NjUyNDQ0Njc6Y2E5b0hRVGc&ver=v4&format=json&report=15&limit=5&fields=Pulse_Cnt*&bulk=1&normalize=1";
+      this.callApi(summaryRequest, function(apiObject) {
+        this.data.waterData.summaryData = JSON.parse(apiObject);
+        callback();
+      }.bind(this));
     }.bind(this));
-    let summaryRequest = "";
-
   };
 
   DataStore.prototype.getWeatherData = function(callback) {
@@ -74,18 +76,18 @@
     for (let i = 0; i < readSets.length; i++) {
       let setData = readSets[i].ReadData;
       for (let j = 0; j < setData.length; j++) {
-        setData[j].Pulse_Diff_1 = j > 0 ?
+        setData[j].Pulse_Cnt_1_Diff = j > 0 ?
           setData[j].Pulse_Cnt_1 - setData[j-1].Pulse_Cnt_1 : 0;
-        setData[j].Pulse_Diff_2 = j > 0 ?
+        setData[j].Pulse_Cnt_2_Diff = j > 0 ?
           setData[j].Pulse_Cnt_2 - setData[j-1].Pulse_Cnt_2 : 0;
-        setData[j].Pulse_Diff_3 = j > 0 ?
+        setData[j].Pulse_Cnt_3_Diff = j > 0 ?
           setData[j].Pulse_Cnt_3 - setData[j-1].Pulse_Cnt_3 : 0;
         setData[j].Volume_1 = getVolumeFromPulseCount(setData[j].Pulse_Cnt_1);
         setData[j].Volume_2 = getVolumeFromPulseCount(setData[j].Pulse_Cnt_2);
         setData[j].Volume_3 = getVolumeFromPulseCount(setData[j].Pulse_Cnt_3);
-        setData[j].Volume_Diff_1 = getVolumeFromPulseCount(setData[j].Pulse_Diff_1);
-        setData[j].Volume_Diff_2 = getVolumeFromPulseCount(setData[j].Pulse_Diff_2);
-        setData[j].Volume_Diff_3 = getVolumeFromPulseCount(setData[j].Pulse_Diff_3);
+        setData[j].Volume_1_Diff = getVolumeFromPulseCount(setData[j].Pulse_Cnt_1_Diff);
+        setData[j].Volume_2_Diff = getVolumeFromPulseCount(setData[j].Pulse_Cnt_2_Diff);
+        setData[j].Volume_3_Diff = getVolumeFromPulseCount(setData[j].Pulse_Cnt_3_Diff);
       }
     }
   };
