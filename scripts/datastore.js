@@ -13,12 +13,14 @@
   }
 
   DataStore.prototype.getWaterData = function(callback) {
-    let request = 'https://io.ekmpush.com/readMeter?key=NjUyNDQ0Njc6Y2E5b0hRVGc&meters=350002883~350002885&ver=v4&fmt=json&cnt=720&fields=Pulse_Cnt_1~Pulse_Cnt_2~Pulse_Cnt_3';
-    this.callApi(request, function(apiObject) {
+    let realtimeRequest = 'https://io.ekmpush.com/readMeter?key=NjUyNDQ0Njc6Y2E5b0hRVGc&meters=350002883~350002885&ver=v4&fmt=json&cnt=720&fields=Pulse_Cnt_1~Pulse_Cnt_2~Pulse_Cnt_3';
+    this.callApi(realtimeRequest, function(apiObject) {
       this.data.waterData.realtimeData = JSON.parse(apiObject);
       this.processWaterData();
       callback();
     }.bind(this));
+    let summaryRequest = "";
+
   };
 
   DataStore.prototype.getWeatherData = function(callback) {
@@ -48,7 +50,7 @@
     let readSets = this.data.waterData.realtimeData.readMeter.ReadSet;
     if (!readSets) { return; }
 
-    // Remove any data points with 0 pulse pulse
+    // Remove any data points with 0 pulse
     for (let i = 0; i < readSets.length; i++) {
       let setData = readSets[i].ReadData;
       for (let j = setData.length - 1; j >= 0; j--) {
@@ -88,7 +90,7 @@
     }
   };
 
-  function getVolumeFromPulseCount(pulseCount) {
+   function getVolumeFromPulseCount(pulseCount) {
       return pulseCount * 0.748052;
   }
 
