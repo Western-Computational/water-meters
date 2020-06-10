@@ -16,7 +16,7 @@
     let realtimeRequest = 'https://io.ekmpush.com/readMeter?key=NjUyNDQ0Njc6Y2E5b0hRVGc&meters=350002883~350002885&ver=v4&fmt=json&cnt=720&fields=Pulse_Cnt_1~Pulse_Cnt_2~Pulse_Cnt_3';
     this.callApi(realtimeRequest, function(apiObject) {
       this.data.waterData.realtimeData = JSON.parse(apiObject);
-      this.processWaterData();
+      this.processRealtimeWaterData();
       let summaryRequest = "https://summary.ekmpush.com/summary?meters=350002883~350002885&key=NjUyNDQ0Njc6Y2E5b0hRVGc&ver=v4&format=json&report=15&limit=5&fields=Pulse_Cnt*&bulk=1&normalize=1";
       this.callApi(summaryRequest, function(apiObject) {
         this.data.waterData.summaryData = JSON.parse(apiObject);
@@ -48,7 +48,7 @@
       xhttp.send();
   }
 
-  DataStore.prototype.processWaterData = function() {
+  DataStore.prototype.processRealtimeWaterData = function() {
     let readSets = this.data.waterData.realtimeData.readMeter.ReadSet;
     if (!readSets) { return; }
 
