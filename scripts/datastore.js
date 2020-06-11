@@ -60,7 +60,7 @@
         if (setData[j].Pulse_Cnt_1 == 0 && setData[j].Pulse_Cnt_2 == 0 &&
           setData[j].Pulse_Cnt_3 == 0) {
             console.log("Removing all-0 pulse count data point at [" + i + "][" + j + "]");
-            setData[j].splice(j, 1);
+            setData.splice(j, 1);
           }
         }
     }

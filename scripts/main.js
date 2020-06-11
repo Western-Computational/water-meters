@@ -32,48 +32,43 @@
 
   function getMeterData() {
     const defMode = "minutes";
-    const mp1 = meterPulseForChartDiv("chartdiv1");
-    const mp2 = meterPulseForChartDiv("chartdiv2");
-    const mp3 = meterPulseForChartDiv("chartdiv3");
-    const mp4 = meterPulseForChartDiv("chartdiv4");
-    const mp5 = meterPulseForChartDiv("chartdiv5");
-    const mode1 = settings.charts.get("chartdiv1").mode || defMode;
-    const mode2 = settings.charts.get("chartdiv2").mode || defMode;
-    const mode3 = settings.charts.get("chartdiv3").mode || defMode;
-    const mode4 = settings.charts.get("chartdiv4").mode || defMode;
-    const mode5 = settings.charts.get("chartdiv5").mode || defMode;
+    const cs1 = settings.charts.get("chartdiv1");
+    const cs2 = settings.charts.get("chartdiv2");
+    const cs3 = settings.charts.get("chartdiv3");
+    const cs4 = settings.charts.get("chartdiv4");
+    const cs5 = settings.charts.get("chartdiv5");
 
     dataStore.getWaterData(function() {
-      if (mp1 && mode1 === "minutes") {
-        renderRealtimeChart(mp1.meter, mp1.pulse, "chartdiv1");
+      if (cs1.meter && cs1.pulse && (cs1.mode || defMode) === "minutes") {
+        renderRealtimeChart(cs1.meter, cs1.pulse, "chartdiv1");
       }
-      if (mp2 && mode2 === "minutes") {
-        renderRealtimeChart(mp2.meter, mp2.pulse, "chartdiv2");
+      if (cs2.meter && cs2.pulse && (cs2.mode || defMode) === "minutes") {
+        renderRealtimeChart(cs2.meter, cs2.pulse, "chartdiv2");
       }
-      if (mp3 && mode3 === "minutes") {
-        renderRealtimeChart(mp3.meter, mp3.pulse, "chartdiv3");
+      if (cs3.meter && cs3.pulse && (cs3.mode || defMode) === "minutes") {
+        renderRealtimeChart(cs3.meter, cs3.pulse, "chartdiv3");
       }
-      if (mp4 && mode4 === "minutes") {
-        renderRealtimeChart(mp4.meter, mp4.pulse, "chartdiv4");
+      if (cs4.meter && cs4.pulse && (cs4.mode || defMode) === "minutes") {
+        renderRealtimeChart(cs4.meter, cs4.pulse, "chartdiv4");
       }
-      if (mp5 && mode5 === "minutes") {
-        renderRealtimeChart(mp5.meter, mp5.pulse, "chartdiv5");
+      if (cs5.meter && cs5.pulse && (cs5.mode || defMode) === "minutes") {
+        renderRealtimeChart(cs5.meter, cs5.pulse, "chartdiv5");
       }
     }, function() {
-      if (mp1 && mode1 === "days") {
-        renderSummaryChart(mp1.meter, mp1.pulse, "chartdiv1");
+      if (cs1.meter && cs1.pulse && (cs1.mode || defMode) === "days") {
+        renderSummaryChart(cs1.meter, cs1.pulse, "chartdiv1");
       }
-      if (mp2 && mode2 === "days") {
+      if (cs2.meter && cs2.pulse && (cs2.mode || defMode) === "days") {
         renderSummaryChart(mp2.meter, mp2.pulse, "chartdiv2");
       }
-      if (mp3 && mode3 === "days") {
-        renderSummaryChart(mp3.meter, mp3.pulse, "chartdiv3");
+      if (cs3.meter && cs3.pulse && (cs3.mode || defMode) === "days") {
+        renderSummaryChart(cs3.meter, cs3.pulse, "chartdiv3");
       }
-      if (mp4 && mode4 === "days") {
-        renderSummaryChart(mp4.meter, mp4.pulse, "chartdiv4");
+      if (cs4.meter && cs4.pulse && (cs4.mode || defMode) === "days") {
+        renderSummaryChart(cs4.meter, cs4.pulse, "chartdiv4");
       }
-      if (mp5 && mode5 === "days") {
-        renderSummaryChart(mp5.meter, mp5.pulse, "chartdiv5");
+      if (cs5.meter && cs5.pulse && (cs5.mode || defMode) === "days") {
+        renderSummaryChart(cs5.meter, cs5.pulse, "chartdiv5");
       }
     });
   }
