@@ -13,8 +13,8 @@ a {
 .text-bold {
   font-weight: bold; }
 
-.hidden {
-    visibility: hidden; }
+.unused {
+  visibility: hidden; }
 
 .row {
   display: flex; }
@@ -63,7 +63,7 @@ a {
       outline: none;
       border: none; }
   .header__avatar {
-    background-image: url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/1609106/headshot.png");
+    background-image: url("images/linkedin1.jpg");
     background-size: cover;
     background-repeat: no-repeat;
     border-radius: 50%;
@@ -170,7 +170,7 @@ a {
     min-height: 90px;
     background-color: rgba(255, 255, 255, 0.1); }
     .sidenav__profile-avatar {
-      background-image: url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/1609106/headshot.png");
+      background-image: url("images/linkedin1.jpg");
       background-size: cover;
       background-repeat: no-repeat;
       border-radius: 50%;
@@ -286,7 +286,7 @@ a {
   height: 300px;
   color: #000;
   background-size: cover;
-  background-image: url("mission_drawing.jpg");
+  background-image: url("images/mission_drawing.jpg");
   margin-bottom: 20px; }
   .main-header__intro-wrapper {
     display: flex;
@@ -325,12 +325,15 @@ a {
       text-align: center; }
 
 .main-overview {
-  /*display: grid;*/
-  display: none;
+  display: grid;
   grid-template-columns: repeat(auto-fit, minmax(265px, 1fr));
   grid-auto-rows: 94px;
   grid-gap: 30px;
   margin: 20px; }
+
+.main-overview.unused {
+  display: none;
+}
 
 .overviewCard {
   display: flex;
@@ -488,24 +491,33 @@ a {
   background-color: rgba(255, 255, 255, 0.5);
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 2px; }
-  .settings__block {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 4px;
-    color: #394263;
-    font-size: 11px; }
-    .settings__block:not(:last-child) {
-      border-right: 1px solid rgba(0, 0, 0, 0.1); }
-  .settings__icon {
-    padding: 0px 3px;
-    font-size: 12px; }
-    .settings__icon:hover {
-      background-color: rgba(255, 255, 255, 0.8);
-      cursor: pointer; }
-  .settings:hover {
-    background-color: #fff;
-    cursor: pointer; }
+
+.settings__block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  color: #394263;
+  font-size: 11px; }
+
+.settings__block.unused {
+    display: none;
+}
+
+.settings__block:not(:last-child) {
+  border-right: 1px solid rgba(0, 0, 0, 0.1); }
+
+.settings__icon {
+  padding: 0px 3px;
+  font-size: 12px; }
+
+.settings__icon:hover {
+  background-color: rgba(255, 255, 255, 0.8);
+  cursor: pointer; }
+
+.settings:hover {
+  background-color: #fff;
+  cursor: pointer; }
 
 .documents {
   display: grid;

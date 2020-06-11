@@ -18,6 +18,8 @@
       renderRealtimeChart("350002883", 2, "chartdiv3");
       renderRealtimeChart("350002883", 3, "chartdiv4");
       renderRealtimeChart("350002885", 1, "chartdiv5");
+    }, function() {
+      console.log("Summary weather data callback");
     });
   }
 
@@ -35,7 +37,8 @@
     let pulseField = pulse_cnt === 1 ? "Volume_1_Diff" :
       pulse_cnt === 2 ? "Volume_2_Diff" : pulse_cnt === 3 ? "Volume_3_Diff" : "Volume_1_Diff";
     let chartCard = document.getElementById(chartdiv).parentNode;
-    let cardHeader = chartCard.parentNode.querySelector('.card__header-title');
+    let cardHeader = chartCard.parentNode.querySelector('.card__header');
+    let currentUse = 0;
 
     //var testval = DataStore.getVolumeFromPulseCount(0);
 
@@ -65,8 +68,15 @@
     series.tooltipText = "{valueY.formatNumber('#.00')}";
     series.data = readSets[meterIdx].ReadData;
 
+    if (readSets[meterIdx].ReadData.length > 0) {
+      currentUse = readSets[meterIdx].ReadData[readSets[meterIdx].ReadData.length-1][pulseField];
+    }
+
     if (cardHeader) {
-      cardHeader.innerHTML = "<strong>" + series.name + "</strong>";
+      let cardTitle = cardHeader.querySelector('.card__header-title');
+      let status = cardHeader.querySelector('.card__header-status');
+      cardTitle.innerHTML = "<strong>" + series.name + "</strong>";
+      status.innerHTML= "Current Use: <strong>" + currentUse + "</strong> gal";
     }
   }
 

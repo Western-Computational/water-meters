@@ -1,5 +1,10 @@
 <!doctype html>
 <html lang="en">
+
+<!-- Original source:
+https://medium.com/better-programming/build-a-responsive-modern-dashboard-layout-with-css-grid-and-flexbox-bd343776a97e
+-->
+
 <head>
   <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400" rel="stylesheet">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
@@ -11,8 +16,8 @@
 
 <div class="grid">
   <header class="header">
-    <i class="fas fa-bars header__menu"></i>
-    <div class="header__search">
+    <i class="fas fa-bars header__menu unused"></i>
+    <div class="header__search unused">
       <input class="header__input" placeholder="Search..." />
     </div>
     <div class="header__avatar">
@@ -43,7 +48,7 @@
     </div>
     <div class="sidenav__profile">
       <div class="sidenav__profile-avatar"></div>
-      <div class="sidenav__profile-title text-light">Matthew H</div>
+      <div class="sidenav__profile-title text-light">David</div>
     </div>
     <div class="row row--align-v-center row--align-h-center">
       <ul class="navList">
@@ -236,14 +241,14 @@
           <div class="main-header__welcome-subtitle text-light">How are you today?</div>
         </div>
         <div class="quickview">
-          <div class="quickview__item hidden">
+          <div class="quickview__item unused">
             <div class="quickview__item-total">41</div>
             <div class="quickview__item-description">
               <i class="far fa-calendar-alt"></i>
               <span class="text-light">Events</span>
             </div>
           </div>
-          <div class="quickview__item hidden">
+          <div class="quickview__item unused">
             <div class="quickview__item-total">64</div>
             <div class="quickview__item-description">
               <i class="far fa-comment"></i>
@@ -261,7 +266,7 @@
       </div>
     </div>
 
-    <div class="main-overview">
+    <div class="main-overview unused">
       <div class="overviewCard">
         <div class="overviewCard-icon overviewCard-icon--document">
            <i class="far fa-file-alt"></i>
@@ -302,77 +307,77 @@
 
     <div class="main__cards">
 
-      <div class="card">
+      <div class="card" id="card1">
         <div class="card__header">
-          <div class="card__header-title text-light" id="card_header1">Realtime <strong>Water Use</strong>
-            <a href="#" class="card__header-link text-bold hidden">View All</a>
-          </div>
+          <div class="card__header-title text-light">Realtime <strong>Water Use</strong></div>
+          <div class="card__header-status"></div>
+          <button class="card__header-button text-bold">View Days</button>
           <div class="settings">
-            <div class="settings__block"><i class="fas fa-edit"></i></div>
+            <div class="settings__block unused"><i class="fas fa-edit"></i></div>
             <div class="settings__block"><i class="fas fa-cog"></i></div>
           </div>
         </div>
-        <div class="card" id="card1">
+        <div class="card">
           <div class="chartdiv" id="chartdiv1"></div>
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="card2">
         <div class="card__header">
-          <div class="card__header-title text-light">Realtime <strong>Water Use</strong>
-            <a href="#" class="card__header-link text-bold hidden">View All</a>
-          </div>
+          <div class="card__header-title text-light">Realtime <strong>Water Use</strong></div>
+          <div class="card__header-status"></div>
+          <button class="card__header-button text-bold">View Days</button>
           <div class="settings">
-            <div class="settings__block"><i class="fas fa-edit"></i></div>
+            <div class="settings__block unused"><i class="fas fa-edit"></i></div>
             <div class="settings__block"><i class="fas fa-cog"></i></div>
           </div>
         </div>
-        <div class="card" id="card2">
+        <div class="card">
           <div class="chartdiv" id="chartdiv2"></div>
         </div>
       </div>
 
-      <div class="card card--finance">
+      <div class="card" id="card3">
         <div class="card__header">
-          <div class="card__header-title text-light">Realtime <strong>Water Use</strong>
-            <a href="#" class="card__header-link text-bold hidden">View All</a>
-          </div>
+          <div class="card__header-title text-light">Realtime <strong>Water Use</strong></div>
+          <div class="card__header-status"></div>
+          <button class="card__header-button text-bold">View Days</button>
           <div class="settings">
-            <div class="settings__block"><i class="fas fa-edit"></i></div>
+            <div class="settings__block unused"><i class="fas fa-edit"></i></div>
             <div class="settings__block"><i class="fas fa-cog"></i></div>
           </div>
         </div>
-        <div class="card" id="card3">
+        <div class="card">
           <div class="chartdiv" id="chartdiv3"></div>
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="card4">
         <div class="card__header">
-          <div class="card__header-title text-light">Realtime <strong>Water Use</strong>
-            <a href="#" class="card__header-link text-bold hidden">View All</a>
-          </div>
+          <div class="card__header-title text-light">Realtime <strong>Water Use</strong></div>
+          <div class="card__header-status"></div>
+          <button class="card__header-button text-bold">View Days</button>
           <div class="settings">
-            <div class="settings__block"><i class="fas fa-edit"></i></div>
+            <div class="settings__block unused"><i class="fas fa-edit"></i></div>
             <div class="settings__block"><i class="fas fa-cog"></i></div>
           </div>
         </div>
-        <div class="card" id="card4">
+        <div class="card">
           <div class="chartdiv" id="chartdiv4"></div>
         </div>
       </div>
 
-      <div class="card card--finance">
+      <div class="card" id="card5">
         <div class="card__header">
-          <div class="card__header-title text-light">Realtime <strong>Water Use</strong>
-            <a href="#" class="card__header-link text-bold hidden">View All</a>
-          </div>
+          <div class="card__header-title text-light">Realtime <strong>Water Use</strong></div>
+          <div class="card__header-status"></div>
+          <button class="card__header-button text-bold">View Days</button>
           <div class="settings">
-            <div class="settings__block"><i class="fas fa-edit"></i></div>
+            <div class="settings__block unused"><i class="fas fa-edit"></i></div>
             <div class="settings__block"><i class="fas fa-cog"></i></div>
           </div>
         </div>
-        <div class="card" id="card5">
+        <div class="card">
           <div class="chartdiv" id="chartdiv5"></div>
         </div>
       </div>
@@ -381,8 +386,8 @@
   </main>
 
   <footer class="footer">
-    <p><span class="footer__copyright">&copy;</span> 2018 MTH</p>
-    <p>Crafted with <i class="fas fa-heart footer__icon"></i> by <a href="https://www.linkedin.com/in/matt-holland/" target="_blank" class="footer__signature">Matt H</a></p>
+    <p><span class="footer__copyright">&copy;</span> 2020 DBL</p>
+    <p>Written with <i class="fas fa-heart footer__icon"></i> for <a href="https://www.elizabethjonasson.com" target="_blank" class="footer__signature">Elizabeth </a></p>
   </footer>
 </div>
 

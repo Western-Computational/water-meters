@@ -12,21 +12,22 @@
     };
   }
 
-  DataStore.prototype.getWaterData = function(callback) {
+  DataStore.prototype.getWaterData = function(realtimeCallback, summaryCallback) {
     let realtimeRequest = 'https://io.ekmpush.com/readMeter?key=NjUyNDQ0Njc6Y2E5b0hRVGc&meters=350002883~350002885&ver=v4&fmt=json&cnt=720&fields=Pulse_Cnt_1~Pulse_Cnt_2~Pulse_Cnt_3';
     this.callApi(realtimeRequest, function(apiObject) {
       this.data.waterData.realtimeData = JSON.parse(apiObject);
       this.processRealtimeWaterData();
+      realtimeCallback();
       let summaryRequest = "https://summary.ekmpush.com/summary?meters=350002883~350002885&key=NjUyNDQ0Njc6Y2E5b0hRVGc&ver=v4&format=json&report=15&limit=5&fields=Pulse_Cnt*&bulk=1&normalize=1";
       this.callApi(summaryRequest, function(apiObject) {
         this.data.waterData.summaryData = JSON.parse(apiObject);
-        callback();
+        summaryCallback();
       }.bind(this));
     }.bind(this));
   };
 
   DataStore.prototype.getWeatherData = function(callback) {
-    var request = 'https://api.openweathermap.org/data/2.5/onecall?lat=36.974117&lon=-122.030792&units=imperial&exclude=minutely,hourly,daily&appid=4530c5f0704984be70de48b60f3ecd42';
+    var request = 'https://api.openweathermap.org/data/2.5/onecall?lat=36.974800&lon=-122.031970&units=imperial&exclude=minutely,hourly,daily&appid=4530c5f0704984be70de48b60f3ecd42';
     this.callApi(request, function(apiObject) {
       this.data.weatherData = JSON.parse(apiObject);
       callback();
