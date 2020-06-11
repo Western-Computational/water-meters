@@ -9,6 +9,7 @@
   $(document).ready(() => {
     console.log("main.js document ready");
     initializeSettings();
+    setupFormElements();
     getMeterData();
     getWeatherData();
   });
@@ -16,18 +17,42 @@
   function initializeSettings() {
     settings = {};
     settings.charts = new Map([
-      [ "chartdiv1", { meter: "350002885", pulse: 2, mode: "days" } ],
+      [ "chartdiv1", { meter: "350002885", pulse: 2, mode: "minutes" } ],
       [ "chartdiv2", { meter: "350002883", pulse: 1, mode: "minutes" } ],
-      [ "chartdiv3", { meter: "350002883", pulse: 2, mode: "days" } ],
+      [ "chartdiv3", { meter: "350002883", pulse: 2, mode: "minutes" } ],
       [ "chartdiv4", { meter: "350002883", pulse: 3, mode: "minutes" } ],
-      [ "chartdiv5", { meter: "350002885", pulse: 1, mode: "days" } ]
+      [ "chartdiv5", { meter: "350002885", pulse: 1, mode: "minutes" } ]
     ]);
   }
 
-  function meterPulseForChartDiv(chartdiv) {
-    let entry = settings.charts.get(chartdiv);
-    return entry && entry.meter && entry.pulse ?
-      { meter: entry.meter, pulse: entry.pulse } : null;
+  function setupFormElements() {
+    const chartdivs = ["chartdiv1", "chartdiv2", "chartdiv3", "chartdiv4", "chartdiv5"];
+    const options = ["Minutes", "Days"];
+
+    chartdivs.forEach(function (chartdiv, index) {
+      let headerLinks = optionLinksForChart(chartdiv);
+      for (let i = 0; i < headerLinks.length; i++) {
+        let optionText = i < options.length ? options[i] : '';
+        headerLinks[i].innerText = optionText;
+        headerLinks[i].onclick = function() { setGraphMode(chartdiv, optionText); };
+      }
+    });
+  }
+
+  function optionLinksForChart(chartdiv) {
+    let chartCard = document.getElementById(chartdiv).parentNode.parentNode;
+    let cardHeader = chartCard.querySelector('.card__header');
+    return cardHeader.getElementsByClassName('card__header-link');
+  }
+
+  function optionLinkForChart(chartdiv, linkText) {
+    let headerLinks = optionLinksForChart(chartdiv);
+    for (let i = 0; i < headerLinks.length; i++) {
+      if (headerLinks[i].innerText == linkText) {
+        return headerLinks[i];
+      }
+    }
+    return null;
   }
 
   function getMeterData() {
@@ -126,20 +151,25 @@
       let cardTitle = cardHeader.querySelector('.card__header-title');
       let status = cardHeader.querySelector('.card__header-status');
       cardTitle.innerHTML = "<strong>" + series.name + "</strong>";
-      status.innerHTML= "Current Use: <strong>" + currentUse + "</strong> gal";
+      status.innerHTML= "Current Use: <strong>" + formatVolume(currentUse) + "</strong> gal";
+      let headerLinks = optionLinksForChart(chartdiv);
+      for (let i = 0; i < headerLinks.length; i++) {
+        if (headerLinks[i].innerText == "Minutes") {
+          headerLinks[i].classList.add('active');
+        } else {
+          headerLinks[i].classList.remove('active');
+        }
+      }
     }
   }
 
   function renderSummaryChart(meter, pulse_cnt, chartdiv) {
     let entries = dataStore.data.waterData.summaryData.get(meter);
-    let meterIdx = meter === "350002883" ? 0 : meter === "350002885" ? 1 : 0;
     let pulseField = pulse_cnt === 2 ? "Pulse_Cnt_2_Diff" :
       pulse_cnt === 3 ? "Pulse_Cnt_3_Diff" : "Pulse_Cnt_1_Diff";
     let chartCard = document.getElementById(chartdiv).parentNode;
     let cardHeader = chartCard.parentNode.querySelector('.card__header');
     let currentUse = 0;
-
-    //var testval = DataStore.getVolumeFromPulseCount(0);
 
     var chart = am4core.create(chartdiv, am4charts.XYChart);
     chart.dateFormatter.inputDateFormat = "x";
@@ -176,6 +206,25 @@
       let status = cardHeader.querySelector('.card__header-status');
       cardTitle.innerHTML = "<strong>" + series.name + "</strong>";
       status.innerHTML= "Current Use: <strong>" + currentUse + "</strong> gal";
+      let headerLinks = optionLinksForChart(chartdiv);
+      for (let i = 0; i < headerLinks.length; i++) {
+        if (headerLinks[i].innerText == "Days") {
+          headerLinks[i].classList.add('active');
+        } else {
+          headerLinks[i].classList.remove('active');
+        }
+      }
+    }
+  }
+
+  function setGraphMode(chartdiv, optionText) {
+    const cs = settings.charts.get("chartdiv1");
+    if (optionText === "Minutes" && cs.mode != "minutes") {
+      cs.mode = "minutes";
+      renderRealtimeChart(cs.meter, cs.pulse, chartdiv);
+    } else if (optionText == "Days" && cs.mode != "days") {
+      cs.mode = "days";
+      renderSummaryChart(cs.meter, cs.pulse, chartdiv);
     }
   }
 
@@ -215,6 +264,13 @@
       }
     }
     return "#000000";
+  }
+
+  function formatVolume(volume) {
+    if (!volume || volume == 0) {
+      return "0";
+    }
+    return volume.toFixed(2);
   }
 
 })(window);

@@ -399,6 +399,8 @@ a {
       color: #1BBAE1;
       letter-spacing: normal;
       display: inline-block; }
+    .card__header-link.active {
+      color: #FFFFFF; }
   .card__main {
     position: relative;
     padding-right: 20px;

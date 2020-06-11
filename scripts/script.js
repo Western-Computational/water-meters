@@ -56,14 +56,6 @@ function setSidenavListeners() {
   });
 }
 
-function toggleClass(el, className) {
-  if (el.hasClass(className)) {
-    el.removeClass(className);
-  } else {
-    el.addClass(className);
-  }
-}
-
 // If user opens the menu and then expands the viewport from mobile size without closing the menu,
 // make sure scrolling is enabled again and that sidenav active class is removed
 function addResizeListeners() {
