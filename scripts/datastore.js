@@ -18,9 +18,9 @@
       this.data.waterData.realtimeData = JSON.parse(apiObject);
       this.processRealtimeWaterData();
       realtimeCallback();
-      let summaryRequest = "https://summary.ekmpush.com/summary?meters=350002883~350002885&key=NjUyNDQ0Njc6Y2E5b0hRVGc&ver=v4&format=json&report=15&limit=5&fields=Pulse_Cnt*&bulk=1&normalize=1";
-      this.callApi(summaryRequest, function(apiObject) {
-        this.data.waterData.summaryData = JSON.parse(apiObject);
+      let summaryRequest = "https://summary.ekmpush.com/summary?meters=350002883~350002885&key=NjUyNDQ0Njc6Y2E5b0hRVGc&ver=v4&format=json&report=dy&limit=60&fields=Pulse_Cnt*&bulk=1&normalize=1";
+      this.callApi(summaryRequest, function(apiResponse) {
+        this.processSummaryWaterData(apiResponse);
         summaryCallback();
       }.bind(this));
     }.bind(this));
@@ -91,6 +91,25 @@
         setData[j].Volume_3_Diff = getVolumeFromPulseCount(setData[j].Pulse_Cnt_3_Diff);
       }
     }
+  };
+
+  DataStore.prototype.processSummaryWaterData = function(rawResponse) {
+     let serverData = JSON.parse(rawResponse);
+     this.data.waterData.summaryData = new Map();
+     for (let i = 0; i < serverData.length; i++) {
+       const meterId = serverData[i].Meter.toString();
+       if (!this.data.waterData.summaryData.has(meterId)) {
+         this.data.waterData.summaryData.set(meterId, []);
+       }
+       this.data.waterData.summaryData.get(meterId).push(serverData[i]);
+     }
+
+     // Sort all data by ascending time
+     for (let [key, value] of this.data.waterData.summaryData) {
+       value.sort(function(a,b) {
+         return (a.End_Time_Stamp_UTC_ms - b.End_Time_Stamp_UTC_ms)
+       });
+     }
   };
 
    function getVolumeFromPulseCount(pulseCount) {
