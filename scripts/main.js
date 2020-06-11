@@ -16,16 +16,27 @@
   function initializeSettings() {
     settings = {};
     settings.charts = new Map([
-      [ "chartdiv1", { mode: "days" } ],
-      [ "chartdiv2", {} ],
-      [ "chartdiv3", {} ],
-      [ "chartdiv4", { mode: "days" } ],
-      [ "chartdiv5", {} ]
+      [ "chartdiv1", { meter: "350002885", pulse: 2, mode: "days" } ],
+      [ "chartdiv2", { meter: "350002883", pulse: 1, mode: "minutes" } ],
+      [ "chartdiv3", { meter: "350002883", pulse: 2, mode: "days" } ],
+      [ "chartdiv4", { meter: "350002883", pulse: 3, mode: "minutes" } ],
+      [ "chartdiv5", { meter: "350002885", pulse: 1, mode: "days" } ]
     ]);
+  }
+
+  function meterPulseForChartDiv(chartdiv) {
+    let entry = settings.charts.get(chartdiv);
+    return entry && entry.meter && entry.pulse ?
+      { meter: entry.meter, pulse: entry.pulse } : null;
   }
 
   function getMeterData() {
     const defMode = "minutes";
+    const mp1 = meterPulseForChartDiv("chartdiv1");
+    const mp2 = meterPulseForChartDiv("chartdiv2");
+    const mp3 = meterPulseForChartDiv("chartdiv3");
+    const mp4 = meterPulseForChartDiv("chartdiv4");
+    const mp5 = meterPulseForChartDiv("chartdiv5");
     const mode1 = settings.charts.get("chartdiv1").mode || defMode;
     const mode2 = settings.charts.get("chartdiv2").mode || defMode;
     const mode3 = settings.charts.get("chartdiv3").mode || defMode;
@@ -33,36 +44,36 @@
     const mode5 = settings.charts.get("chartdiv5").mode || defMode;
 
     dataStore.getWaterData(function() {
-      if (mode1 === "minutes") {
-        renderRealtimeChart("350002885", 2, "chartdiv1");
+      if (mp1 && mode1 === "minutes") {
+        renderRealtimeChart(mp1.meter, mp1.pulse, "chartdiv1");
       }
-      if (mode2 === "minutes") {
-        renderRealtimeChart("350002883", 1, "chartdiv2");
+      if (mp2 && mode2 === "minutes") {
+        renderRealtimeChart(mp2.meter, mp2.pulse, "chartdiv2");
       }
-      if (mode3 === "minutes") {
-        renderRealtimeChart("350002883", 2, "chartdiv3");
+      if (mp3 && mode3 === "minutes") {
+        renderRealtimeChart(mp3.meter, mp3.pulse, "chartdiv3");
       }
-      if (mode4 === "minutes") {
-        renderRealtimeChart("350002883", 3, "chartdiv4");
+      if (mp4 && mode4 === "minutes") {
+        renderRealtimeChart(mp4.meter, mp4.pulse, "chartdiv4");
       }
-      if (mode5 === "minutes") {
-        renderRealtimeChart("350002885", 1, "chartdiv5");
+      if (mp5 && mode5 === "minutes") {
+        renderRealtimeChart(mp5.meter, mp5.pulse, "chartdiv5");
       }
     }, function() {
-      if (mode1 === "days") {
-        renderSummaryChart("350002885", 2, "chartdiv1");
+      if (mp1 && mode1 === "days") {
+        renderSummaryChart(mp1.meter, mp1.pulse, "chartdiv1");
       }
-      if (mode2 === "days") {
-        renderSummaryChart("350002883", 1, "chartdiv2");
+      if (mp2 && mode2 === "days") {
+        renderSummaryChart(mp2.meter, mp2.pulse, "chartdiv2");
       }
-      if (mode3 === "days") {
-        renderSummaryChart("350002883", 2, "chartdiv3");
+      if (mp3 && mode3 === "days") {
+        renderSummaryChart(mp3.meter, mp3.pulse, "chartdiv3");
       }
-      if (mode4 === "days") {
-        renderSummaryChart("350002883", 3, "chartdiv4");
+      if (mp4 && mode4 === "days") {
+        renderSummaryChart(mp4.meter, mp4.pulse, "chartdiv4");
       }
-      if (mode5 === "days") {
-        renderSummaryChart("350002885", 1, "chartdiv5");
+      if (mp5 && mode5 === "days") {
+        renderSummaryChart(mp5.meter, mp5.pulse, "chartdiv5");
       }
     });
   }
