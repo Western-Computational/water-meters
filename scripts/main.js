@@ -4,27 +4,33 @@
   var DataStore = App.DataStore;
 
   let dataStore = new DataStore();
-  let chartSettings = new Map([
-    [ "chartdiv1", { mode: "days" } ],
-    [ "chartdiv2", {} ],
-    [ "chartdiv3", {} ],
-    [ "chartdiv4", { mode: "days" } ],
-    ["chartdiv5", {} ]
-  ]);
+  let settings = {};
 
   $(document).ready(() => {
     console.log("main.js document ready");
+    initializeSettings();
     getMeterData();
     getWeatherData();
   });
 
+  function initializeSettings() {
+    settings = {};
+    settings.charts = new Map([
+      [ "chartdiv1", { mode: "days" } ],
+      [ "chartdiv2", {} ],
+      [ "chartdiv3", {} ],
+      [ "chartdiv4", { mode: "days" } ],
+      [ "chartdiv5", {} ]
+    ]);
+  }
+
   function getMeterData() {
     const defMode = "minutes";
-    const mode1 = chartSettings.get("chartdiv1").mode || defMode;
-    const mode2 = chartSettings.get("chartdiv2").mode || defMode;
-    const mode3 = chartSettings.get("chartdiv3").mode || defMode;
-    const mode4 = chartSettings.get("chartdiv4").mode || defMode;
-    const mode5 = chartSettings.get("chartdiv5").mode || defMode;
+    const mode1 = settings.charts.get("chartdiv1").mode || defMode;
+    const mode2 = settings.charts.get("chartdiv2").mode || defMode;
+    const mode3 = settings.charts.get("chartdiv3").mode || defMode;
+    const mode4 = settings.charts.get("chartdiv4").mode || defMode;
+    const mode5 = settings.charts.get("chartdiv5").mode || defMode;
 
     dataStore.getWaterData(function() {
       if (mode1 === "minutes") {
