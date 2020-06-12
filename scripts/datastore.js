@@ -5,8 +5,8 @@
   function DataStore() {
     this.data = {
       waterData: {
-        realtimeData: {},
-        summaryData: {}
+        realtimeData: new Map(),
+        summaryData: new Map()
       },
       weatherData: {}
     };
@@ -14,9 +14,8 @@
 
   DataStore.prototype.getWaterData = function(realtimeCallback, summaryCallback) {
     let realtimeRequest = 'https://io.ekmpush.com/readMeter?key=NjUyNDQ0Njc6Y2E5b0hRVGc&meters=350002883~350002885&ver=v4&fmt=json&cnt=720&fields=Pulse_Cnt_1~Pulse_Cnt_2~Pulse_Cnt_3';
-    this.callApi(realtimeRequest, function(apiObject) {
-      this.data.waterData.realtimeData = JSON.parse(apiObject);
-      this.processRealtimeWaterData();
+    this.callApi(realtimeRequest, function(apiResponse) {
+      this.processRealtimeWaterData(apiResponse);
       realtimeCallback();
       let summaryRequest = "https://summary.ekmpush.com/summary?meters=350002883~350002885&key=NjUyNDQ0Njc6Y2E5b0hRVGc&ver=v4&format=json&report=dy&limit=60&fields=Pulse_Cnt*&bulk=1&normalize=1";
       this.callApi(summaryRequest, function(apiResponse) {
@@ -34,6 +33,14 @@
     }.bind(this));
   };
 
+  DataStore.prototype.getRealtimeDataForMeter = function(meter) {
+    return this.data.waterData.realtimeData.get(meter);
+  };
+
+  DataStore.prototype.getSummaryDataForMeter = function(meter) {
+    return this.data.waterData.summaryData.get(meter);
+  };
+
   // This code accesses the apiRequest URL and converts
   // the contents to a usable JSON object named apiObject
   DataStore.prototype.callApi = function(apiRequest,callback) {
@@ -49,46 +56,54 @@
       xhttp.send();
   }
 
-  DataStore.prototype.processRealtimeWaterData = function() {
-    let readSets = this.data.waterData.realtimeData.readMeter.ReadSet;
+  DataStore.prototype.processRealtimeWaterData = function(rawResponse) {
+    let serverData = JSON.parse(rawResponse);
+    this.data.waterData.realtimeData = new Map();
+
+    let readSets = serverData.readMeter.ReadSet;
     if (!readSets) { return; }
 
-    // Remove any data points with 0 pulse
+    // Copy all readings to meter-indexed map
+    // Exclude any data points with 0 pulse
     for (let i = 0; i < readSets.length; i++) {
+      const meterId = readSets[i].Meter.toString();
+      if (!this.data.waterData.realtimeData.has(meterId)) {
+        this.data.waterData.realtimeData.set(meterId, []);
+      }
       let setData = readSets[i].ReadData;
       for (let j = setData.length - 1; j >= 0; j--) {
         if (setData[j].Pulse_Cnt_1 == 0 && setData[j].Pulse_Cnt_2 == 0 &&
           setData[j].Pulse_Cnt_3 == 0) {
             console.log("Removing all-0 pulse count data point at [" + i + "][" + j + "]");
-            setData.splice(j, 1);
+            //setData.splice(j, 1);
+          } else {
+            this.data.waterData.realtimeData.get(meterId).push(setData[j]);
           }
         }
     }
 
     // Sort all data by ascending time
-    for (let i = 0; i < readSets.length; i++) {
-      let setData = readSets[i].ReadData;
-      setData.sort(function(a,b) {
-        return (a.Time_Stamp_UTC_ms - b.Time_Stamp_UTC_ms)
+    for (let [key, points] of this.data.waterData.realtimeData) {
+      points.sort(function(a,b) {
+        return (a.End_Time_Stamp_UTC_ms - b.End_Time_Stamp_UTC_ms)
       });
     }
 
     // Add fields for delta pulses and gallons/cu ft
-    for (let i = 0; i < readSets.length; i++) {
-      let setData = readSets[i].ReadData;
-      for (let j = 0; j < setData.length; j++) {
-        setData[j].Pulse_Cnt_1_Diff = j > 0 ?
-          setData[j].Pulse_Cnt_1 - setData[j-1].Pulse_Cnt_1 : 0;
-        setData[j].Pulse_Cnt_2_Diff = j > 0 ?
-          setData[j].Pulse_Cnt_2 - setData[j-1].Pulse_Cnt_2 : 0;
-        setData[j].Pulse_Cnt_3_Diff = j > 0 ?
-          setData[j].Pulse_Cnt_3 - setData[j-1].Pulse_Cnt_3 : 0;
-        setData[j].Volume_1 = getVolumeFromPulseCount(setData[j].Pulse_Cnt_1);
-        setData[j].Volume_2 = getVolumeFromPulseCount(setData[j].Pulse_Cnt_2);
-        setData[j].Volume_3 = getVolumeFromPulseCount(setData[j].Pulse_Cnt_3);
-        setData[j].Volume_1_Diff = getVolumeFromPulseCount(setData[j].Pulse_Cnt_1_Diff);
-        setData[j].Volume_2_Diff = getVolumeFromPulseCount(setData[j].Pulse_Cnt_2_Diff);
-        setData[j].Volume_3_Diff = getVolumeFromPulseCount(setData[j].Pulse_Cnt_3_Diff);
+    for (let [key, points] of this.data.waterData.realtimeData) {
+      for (let i = 0; i < points.length; i++) {
+        points[i].Pulse_Cnt_1_Diff = i > 0 ?
+        points[i].Pulse_Cnt_1 - points[i-1].Pulse_Cnt_1 : 0;
+        points[i].Pulse_Cnt_2_Diff = i > 0 ?
+        points[i].Pulse_Cnt_2 - points[i-1].Pulse_Cnt_2 : 0;
+        points[i].Pulse_Cnt_3_Diff = i > 0 ?
+        points[i].Pulse_Cnt_3 - points[i-1].Pulse_Cnt_3 : 0;
+        points[i].Volume_1 = getVolumeFromPulseCount(points[i].Pulse_Cnt_1);
+        points[i].Volume_2 = getVolumeFromPulseCount(points[i].Pulse_Cnt_2);
+        points[i].Volume_3 = getVolumeFromPulseCount(points[i].Pulse_Cnt_3);
+        points[i].Volume_1_Diff = getVolumeFromPulseCount(points[i].Pulse_Cnt_1_Diff);
+        points[i].Volume_2_Diff = getVolumeFromPulseCount(points[i].Pulse_Cnt_2_Diff);
+        points[i].Volume_3_Diff = getVolumeFromPulseCount(points[i].Pulse_Cnt_3_Diff);
       }
     }
   };
@@ -105,8 +120,8 @@
      }
 
      // Sort all data by ascending time
-     for (let [key, value] of this.data.waterData.summaryData) {
-       value.sort(function(a,b) {
+     for (let [key, points] of this.data.waterData.summaryData) {
+       points.sort(function(a,b) {
          return (a.End_Time_Stamp_UTC_ms - b.End_Time_Stamp_UTC_ms)
        });
      }

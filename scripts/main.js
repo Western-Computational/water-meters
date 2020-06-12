@@ -84,7 +84,7 @@
         renderSummaryChart(cs1.meter, cs1.pulse, "chartdiv1");
       }
       if (cs2.meter && cs2.pulse && (cs2.mode || defMode) === "days") {
-        renderSummaryChart(mp2.meter, mp2.pulse, "chartdiv2");
+        renderSummaryChart(cs2.meter, cs2.pulse, "chartdiv2");
       }
       if (cs3.meter && cs3.pulse && (cs3.mode || defMode) === "days") {
         renderSummaryChart(cs3.meter, cs3.pulse, "chartdiv3");
@@ -106,11 +106,11 @@
     });
   }
 
-  function renderRealtimeChart(meter, pulse_cnt, chartdiv) {
-    let readSets = dataStore.data.waterData.realtimeData.readMeter.ReadSet;
+  function renderRealtimeChart(meter, pulseNum, chartdiv) {
+    let entries = dataStore.getRealtimeDataForMeter(meter);
     let meterIdx = meter === "350002883" ? 0 : meter === "350002885" ? 1 : 0;
-    let pulseField = pulse_cnt === 1 ? "Volume_1_Diff" :
-      pulse_cnt === 2 ? "Volume_2_Diff" : pulse_cnt === 3 ? "Volume_3_Diff" : "Volume_1_Diff";
+    let pulseField = pulseNum === 1 ? "Volume_1_Diff" :
+      pulseNum === 2 ? "Volume_2_Diff" : pulseNum === 3 ? "Volume_3_Diff" : "Volume_1_Diff";
     let chartCard = document.getElementById(chartdiv).parentNode;
     let cardHeader = chartCard.parentNode.querySelector('.card__header');
     let currentUse = 0;
@@ -134,17 +134,17 @@
     valueAxis.cursorTooltipEnabled = false;
 
     var series = chart.series.push(new am4charts.ColumnSeries());
-    series.name = meterName(readSets[meterIdx].Meter, pulse_cnt);
-    var strokeColor = meterColor(readSets[meterIdx].Meter, pulse_cnt);
+    series.name = meterName(meter, pulseNum);
+    var strokeColor = meterColor(meter, pulseNum);
     series.stroke = am4core.color(strokeColor);
     series.fill = am4core.color(strokeColor);
     series.dataFields.dateX = "Time_Stamp_UTC_ms";
     series.dataFields.valueY = pulseField;
     series.tooltipText = "{valueY.formatNumber('#.00')}";
-    series.data = readSets[meterIdx].ReadData;
+    series.data = entries;
 
-    if (readSets[meterIdx].ReadData.length > 0) {
-      currentUse = readSets[meterIdx].ReadData[readSets[meterIdx].ReadData.length-1][pulseField];
+    if (entries.length > 0) {
+      currentUse = entries[entries.length-1][pulseField];
     }
 
     if (cardHeader) {
@@ -163,10 +163,10 @@
     }
   }
 
-  function renderSummaryChart(meter, pulse_cnt, chartdiv) {
-    let entries = dataStore.data.waterData.summaryData.get(meter);
-    let pulseField = pulse_cnt === 2 ? "Pulse_Cnt_2_Diff" :
-      pulse_cnt === 3 ? "Pulse_Cnt_3_Diff" : "Pulse_Cnt_1_Diff";
+  function renderSummaryChart(meter, pulseNum, chartdiv) {
+    let entries = dataStore.getSummaryDataForMeter(meter);
+    let pulseField = pulseNum === 2 ? "Pulse_Cnt_2_Diff" :
+      pulseNum === 3 ? "Pulse_Cnt_3_Diff" : "Pulse_Cnt_1_Diff";
     let chartCard = document.getElementById(chartdiv).parentNode;
     let cardHeader = chartCard.parentNode.querySelector('.card__header');
     let currentUse = 0;
@@ -188,8 +188,8 @@
     valueAxis.cursorTooltipEnabled = false;
 
     var series = chart.series.push(new am4charts.ColumnSeries());
-    series.name = meterName(meter, pulse_cnt);
-    var strokeColor = meterColor(meter, pulse_cnt);
+    series.name = meterName(meter, pulseNum);
+    var strokeColor = meterColor(meter, pulseNum);
     series.stroke = am4core.color(strokeColor);
     series.fill = am4core.color(strokeColor);
     series.dataFields.dateX = "End_Time_Stamp_UTC_ms";
@@ -218,7 +218,7 @@
   }
 
   function setGraphMode(chartdiv, optionText) {
-    const cs = settings.charts.get("chartdiv1");
+    const cs = settings.charts.get(chartdiv);
     if (optionText === "Minutes" && cs.mode != "minutes") {
       cs.mode = "minutes";
       renderRealtimeChart(cs.meter, cs.pulse, chartdiv);
