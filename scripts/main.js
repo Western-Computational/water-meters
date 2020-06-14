@@ -10,7 +10,7 @@
     console.log("main.js document ready");
     initializeSettings();
     setupFormElements();
-    getMeterData();
+    getWaterData();
     getWeatherData();
   });
 
@@ -37,6 +37,13 @@
         headerLinks[i].onclick = function() { setGraphMode(chartdiv, optionText); };
       }
     });
+
+    const refreshLinks = document.getElementsByClassName('sidenav__brand-link');
+    if (refreshLinks && refreshLinks.length > 0) {
+      const refreshLink = refreshLinks[0];
+      refreshLink.onclick = function () { refreshData(); };
+    }
+
   }
 
   function optionLinksForChart(chartdiv) {
@@ -55,7 +62,7 @@
     return null;
   }
 
-  function getMeterData() {
+  function getWaterData() {
     const defMode = "minutes";
     const cs1 = settings.charts.get("chartdiv1");
     const cs2 = settings.charts.get("chartdiv2");
@@ -98,6 +105,19 @@
     });
   }
 
+  function refreshWaterData() {
+    dataStore.updateWaterData(function() {
+
+    }, function() {
+
+    });
+  }
+
+  function refreshData() {
+    refreshWaterData();
+    getWeatherData();
+  }
+
   function getWeatherData() {
     dataStore.getWeatherData(function(apiObject) {
       let tempField = document.getElementById("local_temp");
@@ -115,9 +135,11 @@
     let cardHeader = chartCard.parentNode.querySelector('.card__header');
     let currentUse = 0;
 
-    //var testval = DataStore.getVolumeFromPulseCount(0);
-
-    var chart = am4core.create(chartdiv, am4charts.XYChart);
+    var chart = getChartByContainerId(chartdiv);
+    if (chart) {
+      chart.dispose();
+    }
+    chart = am4core.create(chartdiv, am4charts.XYChart);
     chart.dateFormatter.inputDateFormat = "x";
     chart.cursor = new am4charts.XYCursor();
     chart.cursor.lineY.disabled = true;
@@ -171,7 +193,11 @@
     let cardHeader = chartCard.parentNode.querySelector('.card__header');
     let currentUse = 0;
 
-    var chart = am4core.create(chartdiv, am4charts.XYChart);
+    var chart = getChartByContainerId(chartdiv);
+    if (chart) {
+      chart.dispose();
+    }
+    chart = am4core.create(chartdiv, am4charts.XYChart);
     chart.dateFormatter.inputDateFormat = "x";
     chart.cursor = new am4charts.XYCursor();
     chart.cursor.lineY.disabled = true;
@@ -225,6 +251,16 @@
     } else if (optionText == "Days" && cs.mode != "days") {
       cs.mode = "days";
       renderSummaryChart(cs.meter, cs.pulse, chartdiv);
+    }
+  }
+
+  function getChartByContainerId(id) {
+    let charts = am4core.registry.baseSprites;
+    for (let i = 0; i < charts.length; i++) {
+      let c = charts[i].svgContainer;
+      if (c.htmlElement.id == id) {
+        return charts[i];
+      }
     }
   }
 
