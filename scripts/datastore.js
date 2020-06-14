@@ -12,38 +12,25 @@
     };
   }
 
-  DataStore.prototype.getWaterData = function(realtimeCallback, summaryCallback) {
-    let realtimeRequest = 'https://io.ekmpush.com/readMeter?key=NjUyNDQ0Njc6Y2E5b0hRVGc&meters=350002883~350002885&ver=v4&fmt=json&cnt=720&fields=Pulse_Cnt_1~Pulse_Cnt_2~Pulse_Cnt_3';
-    this.callApi(realtimeRequest, function(apiResponse) {
-      this.processRealtimeWaterData(apiResponse);
-      realtimeCallback();
-      let summaryRequest = "https://summary.ekmpush.com/summary?meters=350002883~350002885&key=NjUyNDQ0Njc6Y2E5b0hRVGc&ver=v4&format=json&report=dy&limit=60&fields=Pulse_Cnt*&bulk=1&normalize=1&timezone=America~Los_Angeles";
-      this.callApi(summaryRequest, function(apiResponse) {
-        this.processSummaryWaterData(apiResponse);
-        summaryCallback();
-      }.bind(this));
-    }.bind(this));
-  };
-
   DataStore.prototype.updateWaterData = function(realtimeCallback, summaryCallback) {
     const lastRealtimeEntry1 = this.lastRealtimeEntryForMeter("350002883");
     const lastRealtimeEntry2 = this.lastRealtimeEntryForMeter("350002885");
-    let timestamp1 = lastRealtimeEntry1['Time_Stamp_UTC_ms'] || 0;
-    let timestamp2 = lastRealtimeEntry2['Time_Stamp_UTC_ms'] || 0;
+    let timestamp1 = (lastRealtimeEntry1 && lastRealtimeEntry1['Time_Stamp_UTC_ms']) || 0;
+    let timestamp2 = (lastRealtimeEntry2 && lastRealtimeEntry2['Time_Stamp_UTC_ms']) || 0;
     // Get the earliest of the last timestamps to request updates
     let lastTimestamp = timestamp1 < timestamp2 ? timestamp1 : timestamp2;
     let sinceClause = lastTimestamp > 0 ? "&since=" + lastTimestamp.toString() : "";
     let realtimeRequest = 'https://io.ekmpush.com/readMeter?key=NjUyNDQ0Njc6Y2E5b0hRVGc&meters=350002883~350002885&ver=v4&fmt=json&cnt=720&fields=Pulse_Cnt_1~Pulse_Cnt_2~Pulse_Cnt_3' +
       sinceClause;
     this.callApi(realtimeRequest, function(apiResponse) {
-      this.processRealtimeWaterUpdate(apiResponse);
+      this.processRealtimeWaterData(apiResponse);
       realtimeCallback();
       //this.data.waterData.summaryData.get("350002883").pop();
       //this.data.waterData.summaryData.get("350002885").pop();
       const lastSummaryEntry1 = this.lastSummaryEntryForMeter("350002883");
       const lastSummaryEntry2 = this.lastSummaryEntryForMeter("350002885");
-      let timestamp1 = lastSummaryEntry1['End_Time_Stamp_UTC_ms'] || 0;
-      let timestamp2 = lastSummaryEntry2['End_Time_Stamp_UTC_ms'] || 0;
+      let timestamp1 = (lastSummaryEntry1 && lastSummaryEntry1['End_Time_Stamp_UTC_ms']) || 0;
+      let timestamp2 = (lastSummaryEntry2 && lastSummaryEntry2['End_Time_Stamp_UTC_ms']) || 0;
       // Get the earliest of the last timestamps to request updates
       let lastTimestamp = timestamp1 < timestamp2 ? timestamp1 : timestamp2;
       let updateAvailable = true;
@@ -116,58 +103,6 @@
 
   DataStore.prototype.processRealtimeWaterData = function(rawResponse) {
     let serverData = JSON.parse(rawResponse);
-    this.data.waterData.realtimeData = new Map();
-
-    let readSets = serverData.readMeter.ReadSet;
-    if (!readSets) { return; }
-
-    // Copy all readings to meter-indexed map
-    // Exclude any data points with 0 pulse
-    for (let i = 0; i < readSets.length; i++) {
-      const meterId = readSets[i].Meter.toString();
-      if (!this.data.waterData.realtimeData.has(meterId)) {
-        this.data.waterData.realtimeData.set(meterId, []);
-      }
-      let setData = readSets[i].ReadData;
-      for (let j = setData.length - 1; j >= 0; j--) {
-        if (setData[j].Pulse_Cnt_1 == 0 && setData[j].Pulse_Cnt_2 == 0 &&
-          setData[j].Pulse_Cnt_3 == 0) {
-            console.log("Removing all-0 pulse count data point at [" + i + "][" + j + "]");
-            //setData.splice(j, 1);
-          } else {
-            this.data.waterData.realtimeData.get(meterId).push(setData[j]);
-          }
-        }
-    }
-
-    // Sort all data by ascending time
-    for (let [key, points] of this.data.waterData.realtimeData) {
-      points.sort(function(a,b) {
-        return (a.Time_Stamp_UTC_ms - b.Time_Stamp_UTC_ms)
-      });
-    }
-
-    // Add fields for delta pulses and gallons/cu ft
-    for (let [key, points] of this.data.waterData.realtimeData) {
-      for (let i = 0; i < points.length; i++) {
-        points[i].Pulse_Cnt_1_Diff = i > 0 ?
-        points[i].Pulse_Cnt_1 - points[i-1].Pulse_Cnt_1 : 0;
-        points[i].Pulse_Cnt_2_Diff = i > 0 ?
-        points[i].Pulse_Cnt_2 - points[i-1].Pulse_Cnt_2 : 0;
-        points[i].Pulse_Cnt_3_Diff = i > 0 ?
-        points[i].Pulse_Cnt_3 - points[i-1].Pulse_Cnt_3 : 0;
-        points[i].Volume_1 = getVolumeFromPulseCount(points[i].Pulse_Cnt_1);
-        points[i].Volume_2 = getVolumeFromPulseCount(points[i].Pulse_Cnt_2);
-        points[i].Volume_3 = getVolumeFromPulseCount(points[i].Pulse_Cnt_3);
-        points[i].Volume_1_Diff = getVolumeFromPulseCount(points[i].Pulse_Cnt_1_Diff);
-        points[i].Volume_2_Diff = getVolumeFromPulseCount(points[i].Pulse_Cnt_2_Diff);
-        points[i].Volume_3_Diff = getVolumeFromPulseCount(points[i].Pulse_Cnt_3_Diff);
-      }
-    }
-  };
-
-  DataStore.prototype.processRealtimeWaterUpdate = function(rawResponse) {
-    let serverData = JSON.parse(rawResponse);
     let readSets = serverData.readMeter.ReadSet;
     if (!readSets) { return; }
 
@@ -187,6 +122,8 @@
       // Add fields for delta pulses and gallons/cu ft
       let meterData = this.data.waterData.realtimeData.get(meterId);
       let lastPoint = meterData.length > 0 ? meterData[meterData.length - 1] : null;
+      const startCount = meterData.length;
+      let addCount = 0;
 
       for (let j = 0; j < points.length; j++) {
         // Exclude any data points with 0 pulse
@@ -210,8 +147,11 @@
           point.Volume_3_Diff = getVolumeFromPulseCount(point.Pulse_Cnt_3_Diff);
           meterData.push(point);
           lastPoint = point;
+          addCount++;
         }
       }
+      console.log("Added realtime data for meter " + meterId + ": prev=" +
+       startCount + ", added=" + addCount);
     }
   };
 
@@ -224,6 +164,8 @@
        return (a.End_Time_Stamp_UTC_ms - b.End_Time_Stamp_UTC_ms)
      });
 
+     let meterCounts = new Map();
+
      for (let i = 0; i < serverData.length; i++) {
        const meterId = serverData[i].Meter.toString();
        if (!this.data.waterData.summaryData.has(meterId)) {
@@ -232,11 +174,19 @@
        const point = serverData[i];
        const meterData = this.data.waterData.summaryData.get(meterId);
        const lastPoint = meterData.length > 0 ? meterData[meterData.length - 1] : null;
+       if (!meterCounts.has(meterId)) {
+          meterCounts.set(meterId, {start: meterData.length, added: 0});
+       }
        if (lastPoint && point.Time_Stamp_UTC_ms <= lastPoint.Time_Stamp_UTC_ms) {
          console.log("Skipping old/duplicate summary point at index [" + i + "]");
        } else {
          meterData.push(point);
+         meterCounts.get(meterId).added++;
        }
+     }
+     for (let [key, value] of meterCounts) {
+       console.log("Added summary data for meter " + key + ": prev=" +
+        value.start + ", added=" + value.added);
      }
   };
 

@@ -70,7 +70,7 @@
     const cs4 = settings.charts.get("chartdiv4");
     const cs5 = settings.charts.get("chartdiv5");
 
-    dataStore.getWaterData(function() {
+    dataStore.updateWaterData(function() {
       if (cs1.meter && cs1.pulse && (cs1.mode || defMode) === "minutes") {
         renderRealtimeChart(cs1.meter, cs1.pulse, "chartdiv1");
       }
