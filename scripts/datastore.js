@@ -25,8 +25,15 @@
     this.callApi(realtimeRequest, function(apiResponse) {
       this.processRealtimeWaterData(apiResponse);
       realtimeCallback();
-      //this.data.waterData.summaryData.get("350002883").pop();
-      //this.data.waterData.summaryData.get("350002885").pop();
+      /*
+      // For testing incremental updates to summary data:
+      if (this.lastSummaryEntryForMeter("350002883")) {
+        this.data.waterData.summaryData.get("350002883").pop();
+      }
+      if (this.lastSummaryEntryForMeter("350002885")) {
+        this.data.waterData.summaryData.get("350002885").pop();
+      }
+      */
       const lastSummaryEntry1 = this.lastSummaryEntryForMeter("350002883");
       const lastSummaryEntry2 = this.lastSummaryEntryForMeter("350002885");
       let timestamp1 = (lastSummaryEntry1 && lastSummaryEntry1['End_Time_Stamp_UTC_ms']) || 0;
@@ -71,7 +78,7 @@
   };
 
   DataStore.prototype.lastRealtimeEntryForMeter = function(meter) {
-    const entries = this.data.waterData.realtimeData.get(meter);
+    const entries = this.getRealtimeDataForMeter(meter);
     if (entries && entries.length > 0) {
       return entries[entries.length-1];
     }
@@ -79,7 +86,7 @@
   };
 
   DataStore.prototype.lastSummaryEntryForMeter = function(meter) {
-    const entries = this.data.waterData.summaryData.get(meter);
+    const entries = this.getSummaryDataForMeter(meter);
     if (entries && entries.length > 0) {
       return entries[entries.length-1];
     }
@@ -157,7 +164,7 @@
 
   DataStore.prototype.processSummaryWaterData = function(rawResponse) {
      let serverData = JSON.parse(rawResponse);
-     this.data.waterData.summaryData = new Map();
+     //this.data.waterData.summaryData = new Map();
 
      // Sort all data by ascending time
      serverData.sort(function(a,b) {
