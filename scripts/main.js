@@ -152,6 +152,7 @@
     var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
     dateAxis.dataFields.date = "Time_Stamp_UTC_ms";
     dateAxis.title.text = "Last 12 Hours";
+    dateAxis.title.fontSize = 16;
   /*
     dateAxis.dateFormats.setKey("minute", "MMM dd\nHH:mm");
     dateAxis.periodChangeDateFormats.setKey("minute", "MMM dd\nHH:mm");
@@ -190,13 +191,19 @@
     }
   }
 
-  function renderSummaryChart(meter, pulseNum, chartdiv) {
-    let entries = dataStore.getSummaryEntriesForMeter(meter);
+  Date.prototype.addDays = function(days) {
+      var date = new Date(this.valueOf());
+      date.setDate(date.getDate() + days);
+      return date;
+  };
+
+  function renderSummaryChart(meterId, pulseNum, chartdiv) {
+    let entries = dataStore.getSummaryEntriesForMeter(meterId);
     let volField = pulseNum === 2 ? "Volume_2_Diff" :
       pulseNum === 3 ? "Volume_3_Diff" : "Volume_1_Diff";
     let chartCard = document.getElementById(chartdiv).parentNode;
     let cardHeader = chartCard.parentNode.querySelector('.card__header');
-    let currentUse = 0;
+    let totalUse = dataStore.summaryTotalForMeterField(meterId, volField);
 
     var chart = getChartByContainerId(chartdiv);
     if (chart) {
@@ -210,6 +217,7 @@
     var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
     dateAxis.dataFields.date = "End_Time_Stamp_UTC_ms";
     dateAxis.title.text = "Past 60 days";
+    dateAxis.title.fontSize = 16;
   /*
     dateAxis.dateFormats.setKey("minute", "MMM dd\nHH:mm");
     dateAxis.periodChangeDateFormats.setKey("minute", "MMM dd\nHH:mm");
@@ -219,8 +227,8 @@
     valueAxis.cursorTooltipEnabled = false;
 
     var series = chart.series.push(new am4charts.ColumnSeries());
-    series.name = meterName(meter, pulseNum);
-    var strokeColor = meterColor(meter, pulseNum);
+    series.name = meterName(meterId, pulseNum);
+    var strokeColor = meterColor(meterId, pulseNum);
     series.stroke = am4core.color(strokeColor);
     series.fill = am4core.color(strokeColor);
     series.dataFields.dateX = "End_Time_Stamp_UTC_ms";
@@ -232,11 +240,20 @@
       currentUse = readSets[meterIdx].ReadData[readSets[meterIdx].ReadData.length-1][pulseField];
     }
 */
+/*
+    const firstEntry = dataStore.firstSummaryEntryForMeter(meterId);
+    const lastEntry = dataStore.lastSummaryEntryForMeter(meterId);
+    const firstDate = new Date(firstEntry.Start_Time_Stamp_UTC_ms);
+    const lastDate = new Date(lastEntry.End_Time_Stamp_UTC_ms);
+    const startDate = firstDate.addDays(1);
+    const endDate = lastDate.addDays(-1);
+    let subrange = dataStore.getSummaryRangeForMeter(meterId, startDate, endDate);
+*/
     if (cardHeader) {
       let cardTitle = cardHeader.querySelector('.card__header-title');
       let status = cardHeader.querySelector('.card__header-status');
       cardTitle.innerHTML = "<strong>" + series.name + "</strong>";
-      status.innerHTML= "Current Use: <strong>" + currentUse + "</strong> gal";
+      status.innerHTML= "Total Use: <strong>" + formatVolume(totalUse) + "</strong> gal";
       let headerLinks = optionLinksForChart(chartdiv);
       for (let i = 0; i < headerLinks.length; i++) {
         if (headerLinks[i].innerText == "Days") {
@@ -250,11 +267,13 @@
 
   function renderSummaryPortionsChart(chartdiv) {
     let chartData = [];
-    for (let [key, value] of settings.units) {
+    for (let [unitId, us] of settings.units) {
+      let volField = us.pulse === 1 ? "Volume_1_Diff" : us.pulse === 2 ? "Volume_2_Diff" :
+        us.pulse === 3 ? "Volume_3_Diff" : null;
       let dataPoint = {
-        "unit": key,
-        "data": summaryVolumeDifferenceForUnit(key),
-        "color": meterColor(value.meterId, value.pulse)
+        "unit": unitId,
+        "data": dataStore.summaryTotalForMeterField(us.meterId, volField),
+        "color": meterColor(us.meterId, us.pulse)
       };
       chartData.push(dataPoint);
     }
@@ -267,6 +286,19 @@
     let pieSeries = chart.series.push(new am4charts.PieSeries());
     chart.data = chartData;
     chart.innerRadius = am4core.percent(33);
+
+    const firstDate = new Date(dataStore.earliestSummaryTimestamp());
+    const lastDate = new Date(dataStore.latestSummaryTimestamp());
+    const firstDateStr = firstDate.toLocaleDateString("en-US");
+    const lastDateStr = lastDate.toLocaleDateString("en-US");
+
+    let label = chart.chartContainer.createChild(am4core.Label);
+    label.text = firstDateStr + " to " + lastDateStr;
+    label.align = "center";
+    label.fontSize = 16;
+    label.x = am4core.percent(50);
+    label.y = am4core.percent(92.5);
+
     pieSeries.dataFields.value = "data";
     pieSeries.dataFields.category = "unit";
     pieSeries.slices.template.propertyFields.fill = "color";
@@ -274,6 +306,15 @@
     pieSeries.slices.template.strokeWidth = 2;
     pieSeries.slices.template.strokeOpacity = 1;
     pieSeries.slices.template.tooltipText = "{category}: {value.percent.formatNumber('#.0')}% ({value.formatNumber('#.00')})";
+
+    let chartCard = document.getElementById(chartdiv).parentNode;
+    let cardHeader = chartCard.parentNode.querySelector('.card__header');
+    if (cardHeader) {
+      let cardTitle = cardHeader.querySelector('.card__header-title');
+      //let status = cardHeader.querySelector('.card__header-status');
+      cardTitle.innerHTML = "<strong>Total</strong> Water Use";
+      //status.innerHTML= "Current Use: <strong>" + currentUse + "</strong> gal";
+    }
   }
 
   function setGraphMode(chartdiv, optionText) {
@@ -293,6 +334,14 @@
       let c = charts[i].svgContainer;
       if (c.htmlElement.id == id) {
         return charts[i];
+      }
+    }
+  }
+
+  function getUnitId(meterId, pulse) {
+    for (let [unitId, us] of settings.units) {
+      if (us.meterId == meterId && us.pulse == pulse) {
+        return unitId;
       }
     }
   }
@@ -340,17 +389,9 @@
     const meterId = unitSettings.meterId;
     const pulseNum = unitSettings.pulse;
     if (meterId && pulseNum) {
-      const firstEntry = dataStore.firstSummaryEntryForMeter(meterId);
-      const lastEntry = dataStore.lastSummaryEntryForMeter(meterId);
-      if (firstEntry && lastEntry) {
-        const firstPulseField = pulseNum === 2 ? "Pulse_Cnt_2_Min" :
-          pulseNum === 3 ? "Pulse_Cnt_3_Min" : "Pulse_Cnt_1_Min";
-        const lastPulseField = pulseNum === 2 ? "Pulse_Cnt_2_Max" :
-          pulseNum === 3 ? "Pulse_Cnt_3_Max" : "Pulse_Cnt_1_Max";
-        const startPulse = firstEntry[firstPulseField] || 0;
-        const endPulse = lastEntry[lastPulseField] || 0;
-        return DataStore.getVolumeFromPulseCount(endPulse - startPulse);
-      }
+      const volField = pulseNum === 2 ? "Volume_2_Diff" :
+        pulseNum === 3 ? "Volume_3_Diff" : "Volume_1_Diff";
+      return dataStore.summaryTotalForMeterField(meterId, volField);
     }
     return 0;
   }

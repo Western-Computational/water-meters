@@ -49,7 +49,7 @@
         updateAvailable = startDateStr !== endDateStr;
       }
       if (updateAvailable) {
-        let summaryRequest = "https://summary.ekmpush.com/summary?meters=350002883~350002885&key=NjUyNDQ0Njc6Y2E5b0hRVGc&ver=v4&format=json&report=dy&limit=10&fields=Pulse_Cnt*&bulk=1&normalize=1&timezone=America~Los_Angeles" +
+        let summaryRequest = "https://summary.ekmpush.com/summary?meters=350002883~350002885&key=NjUyNDQ0Njc6Y2E5b0hRVGc&ver=v4&format=json&report=dy&limit=60&fields=Pulse_Cnt*&bulk=1&normalize=1&timezone=America~Los_Angeles" +
           sinceClause;
           this.callApi(summaryRequest, function(apiResponse) {
             this.processSummaryWaterData(apiResponse);
@@ -87,6 +87,25 @@
     return (data && data.entries) || null;
   };
 
+  DataStore.prototype.getSummaryRangeForMeter = function(meterId, startDate, endDate) {
+    const data = this.getSummaryDataForMeter(meterId);
+    if (data && data.entries) {
+      let rangeEntries = [];
+      const start = beginningOfDayTimestmap(startDate);
+      const end = endOfDayTimestmap(endDate);
+      for (let i = 0; i < data.entries.length; i++) {
+        const point = data.entries[i];
+        if (point.End_Time_Stamp_UTC_ms > end) {
+          break;
+        } else if (point.Start_Time_Stamp_UTC_ms >= start) {
+          rangeEntries.push(point);
+        }
+      }
+      return rangeEntries;
+    }
+    return null;
+  };
+
   DataStore.prototype.lastRealtimeEntryForMeter = function(meter) {
     const entries = this.getRealtimeEntriesForMeter(meter);
     if (entries && entries.length > 0) {
@@ -109,6 +128,39 @@
       return entries[entries.length-1];
     }
     return null;
+  };
+
+  DataStore.prototype.earliestSummaryTimestamp = function() {
+    let ts;
+    for (let [meterId, data] of this.data.waterData.summaryData) {
+      const firstEntry = this.firstSummaryEntryForMeter(meterId);
+      if (!ts || firstEntry.End_Time_Stamp_UTC_ms < ts) {
+        ts = firstEntry.End_Time_Stamp_UTC_ms;
+      }
+    }
+    return ts;
+  };
+
+  DataStore.prototype.latestSummaryTimestamp = function() {
+    let ts;
+    for (let [meterId, data] of this.data.waterData.summaryData) {
+      const lastEntry = this.lastSummaryEntryForMeter(meterId);
+      if (!ts || lastEntry.End_Time_Stamp_UTC_ms > ts) {
+        ts = lastEntry.End_Time_Stamp_UTC_ms;
+      }
+    }
+    return ts;
+  };
+
+  DataStore.prototype.summaryTotalForMeterField = function(meterId, dataField) {
+    let total = 0;
+    if (meterId && dataField) {
+      const data = this.getSummaryEntriesForMeter(meterId);
+      for (let i = 0; i < data.length; i++) {
+        total += (data[i][dataField] || 0);
+      }
+    }
+    return total;
   };
 
   // This code accesses the apiRequest URL and converts
@@ -200,18 +252,18 @@
          this.data.waterData.summaryData.set(meterId, { entries: [] });
        }
        const point = serverData[i];
-       const meterData = this.getSummaryEntriesForMeter(meterId);
+       let meterPoints = this.getSummaryEntriesForMeter(meterId);
        const lastPoint = this.lastSummaryEntryForMeter(meterId);
        if (!meterCounts.has(meterId)) {
-          meterCounts.set(meterId, {start: meterData.length, added: 0, vol1: 0, vol2: 0, vol3: 0});
+          meterCounts.set(meterId, {start: meterPoints.length, added: 0, vol1: 0, vol2: 0, vol3: 0});
        }
-       if (lastPoint && point.Time_Stamp_UTC_ms <= lastPoint.Time_Stamp_UTC_ms) {
+       if (lastPoint && point.End_Time_Stamp_UTC_ms <= lastPoint.End_Time_Stamp_UTC_ms) {
          console.log("Skipping old/duplicate summary point at index [" + i + "]");
        } else {
          point.Volume_1_Diff = DataStore.getVolumeFromPulseCount(point.Pulse_Cnt_1_Diff);
          point.Volume_2_Diff = DataStore.getVolumeFromPulseCount(point.Pulse_Cnt_2_Diff);
          point.Volume_3_Diff = DataStore.getVolumeFromPulseCount(point.Pulse_Cnt_3_Diff);
-         meterData.push(point);
+         meterPoints.push(point);
          let mc = meterCounts.get(meterId);
          mc.added++;
          mc.vol1 += point.Volume_1_Diff;
@@ -243,8 +295,14 @@
     return year + month + date + hours + minutes;
   }
 
-  function endOfDayTimestmap() {
-    let d = new Date();
+  function beginningOfDayTimestmap(date) {
+    let d = date || new Date();
+    d.setHours(0,0,0,0);
+    return d.getTime();
+  }
+
+  function endOfDayTimestmap(date) {
+    let d = date || new Date();
     d.setHours(23,59,59,999);
     return d.getTime();
   }
