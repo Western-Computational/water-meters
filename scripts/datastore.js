@@ -49,7 +49,7 @@
         updateAvailable = startDateStr !== endDateStr;
       }
       if (updateAvailable) {
-        let summaryRequest = "https://summary.ekmpush.com/summary?meters=350002883~350002885&key=NjUyNDQ0Njc6Y2E5b0hRVGc&ver=v4&format=json&report=dy&limit=60&fields=Pulse_Cnt*&bulk=1&normalize=1&timezone=America~Los_Angeles" +
+        let summaryRequest = "https://summary.ekmpush.com/summary?meters=350002883~350002885&key=NjUyNDQ0Njc6Y2E5b0hRVGc&ver=v4&format=json&report=dy&limit=10&fields=Pulse_Cnt*&bulk=1&normalize=1&timezone=America~Los_Angeles" +
           sinceClause;
           this.callApi(summaryRequest, function(apiResponse) {
             this.processSummaryWaterData(apiResponse);
@@ -69,24 +69,42 @@
     }.bind(this));
   };
 
-  DataStore.prototype.getRealtimeDataForMeter = function(meter) {
-    return this.data.waterData.realtimeData.get(meter);
+  DataStore.prototype.getRealtimeDataForMeter = function(meterId) {
+    return this.data.waterData.realtimeData.get(meterId);
   };
 
-  DataStore.prototype.getSummaryDataForMeter = function(meter) {
-    return this.data.waterData.summaryData.get(meter);
+  DataStore.prototype.getRealtimeEntriesForMeter = function(meterId) {
+    const data = this.getRealtimeDataForMeter(meterId);
+    return (data && data.entries) || null;
+  };
+
+  DataStore.prototype.getSummaryDataForMeter = function(meterId) {
+    return this.data.waterData.summaryData.get(meterId);
+  };
+
+  DataStore.prototype.getSummaryEntriesForMeter = function(meterId) {
+    const data = this.getSummaryDataForMeter(meterId);
+    return (data && data.entries) || null;
   };
 
   DataStore.prototype.lastRealtimeEntryForMeter = function(meter) {
-    const entries = this.getRealtimeDataForMeter(meter);
+    const entries = this.getRealtimeEntriesForMeter(meter);
     if (entries && entries.length > 0) {
       return entries[entries.length-1];
     }
     return null;
   };
 
+  DataStore.prototype.firstSummaryEntryForMeter = function(meter) {
+    const entries = this.getSummaryEntriesForMeter(meter);
+    if (entries && entries.length > 0) {
+      return entries[0];
+    }
+    return null;
+  };
+
   DataStore.prototype.lastSummaryEntryForMeter = function(meter) {
-    const entries = this.getSummaryDataForMeter(meter);
+    const entries = this.getSummaryEntriesForMeter(meter);
     if (entries && entries.length > 0) {
       return entries[entries.length-1];
     }
@@ -117,7 +135,7 @@
     for (let i = 0; i < readSets.length; i++) {
       const meterId = readSets[i].Meter.toString();
       if (!this.data.waterData.realtimeData.has(meterId)) {
-        this.data.waterData.realtimeData.set(meterId, []);
+        this.data.waterData.realtimeData.set(meterId, { entries: [] });
       }
 
       // Sort new data by ascending time
@@ -127,8 +145,9 @@
       });
 
       // Add fields for delta pulses and gallons/cu ft
-      let meterData = this.data.waterData.realtimeData.get(meterId);
-      let lastPoint = meterData.length > 0 ? meterData[meterData.length - 1] : null;
+      let meterData = this.getRealtimeDataForMeter(meterId);
+      let meterPoints = this.getRealtimeEntriesForMeter(meterId);
+      let lastPoint = this.lastRealtimeEntryForMeter(meterId);
       const startCount = meterData.length;
       let addCount = 0;
 
@@ -146,13 +165,15 @@
             point.Pulse_Cnt_2 - lastPoint.Pulse_Cnt_2 : 0;
           point.Pulse_Cnt_3_Diff = lastPoint != null ?
             point.Pulse_Cnt_3 - lastPoint.Pulse_Cnt_3 : 0;
-          point.Volume_1 = getVolumeFromPulseCount(point.Pulse_Cnt_1);
-          point.Volume_2 = getVolumeFromPulseCount(point.Pulse_Cnt_2);
-          point.Volume_3 = getVolumeFromPulseCount(point.Pulse_Cnt_3);
-          point.Volume_1_Diff = getVolumeFromPulseCount(point.Pulse_Cnt_1_Diff);
-          point.Volume_2_Diff = getVolumeFromPulseCount(point.Pulse_Cnt_2_Diff);
-          point.Volume_3_Diff = getVolumeFromPulseCount(point.Pulse_Cnt_3_Diff);
-          meterData.push(point);
+            /*
+          point.Volume_1 = DataStore.getVolumeFromPulseCount(point.Pulse_Cnt_1);
+          point.Volume_2 = DataStore.getVolumeFromPulseCount(point.Pulse_Cnt_2);
+          point.Volume_3 = DataStore.getVolumeFromPulseCount(point.Pulse_Cnt_3);
+          */
+          point.Volume_1_Diff = DataStore.getVolumeFromPulseCount(point.Pulse_Cnt_1_Diff);
+          point.Volume_2_Diff = DataStore.getVolumeFromPulseCount(point.Pulse_Cnt_2_Diff);
+          point.Volume_3_Diff = DataStore.getVolumeFromPulseCount(point.Pulse_Cnt_3_Diff);
+          meterPoints.push(point);
           lastPoint = point;
           addCount++;
         }
@@ -164,42 +185,53 @@
 
   DataStore.prototype.processSummaryWaterData = function(rawResponse) {
      let serverData = JSON.parse(rawResponse);
-     //this.data.waterData.summaryData = new Map();
 
      // Sort all data by ascending time
      serverData.sort(function(a,b) {
        return (a.End_Time_Stamp_UTC_ms - b.End_Time_Stamp_UTC_ms)
      });
 
+     // For debugging:
      let meterCounts = new Map();
 
      for (let i = 0; i < serverData.length; i++) {
        const meterId = serverData[i].Meter.toString();
        if (!this.data.waterData.summaryData.has(meterId)) {
-         this.data.waterData.summaryData.set(meterId, []);
+         this.data.waterData.summaryData.set(meterId, { entries: [] });
        }
        const point = serverData[i];
-       const meterData = this.data.waterData.summaryData.get(meterId);
-       const lastPoint = meterData.length > 0 ? meterData[meterData.length - 1] : null;
+       const meterData = this.getSummaryEntriesForMeter(meterId);
+       const lastPoint = this.lastSummaryEntryForMeter(meterId);
        if (!meterCounts.has(meterId)) {
-          meterCounts.set(meterId, {start: meterData.length, added: 0});
+          meterCounts.set(meterId, {start: meterData.length, added: 0, vol1: 0, vol2: 0, vol3: 0});
        }
        if (lastPoint && point.Time_Stamp_UTC_ms <= lastPoint.Time_Stamp_UTC_ms) {
          console.log("Skipping old/duplicate summary point at index [" + i + "]");
        } else {
+         point.Volume_1_Diff = DataStore.getVolumeFromPulseCount(point.Pulse_Cnt_1_Diff);
+         point.Volume_2_Diff = DataStore.getVolumeFromPulseCount(point.Pulse_Cnt_2_Diff);
+         point.Volume_3_Diff = DataStore.getVolumeFromPulseCount(point.Pulse_Cnt_3_Diff);
          meterData.push(point);
-         meterCounts.get(meterId).added++;
+         let mc = meterCounts.get(meterId);
+         mc.added++;
+         mc.vol1 += point.Volume_1_Diff;
+         mc.vol2 += point.Volume_2_Diff;
+         mc.vol3 += point.Volume_3_Diff;
        }
      }
+
+     // For debugging:
      for (let [key, value] of meterCounts) {
        console.log("Added summary data for meter " + key + ": prev=" +
         value.start + ", added=" + value.added);
+       console.log("Volume totals: pulse1=" + value.vol1 + ", pulse2=" + value.vol2 +
+        ", pulse3=" + value.vol3);
      }
   };
 
-   function getVolumeFromPulseCount(pulseCount) {
+   DataStore.getVolumeFromPulseCount = function(pulseCount) {
       return pulseCount * 0.748052;
-  }
+  };
 
   function dateStringFromTimestamp(timestamp) {
     let d = new Date(timestamp);
