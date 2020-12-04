@@ -124,10 +124,15 @@
   }
 
   function getWeatherData() {
-    dataStore.getWeatherData(function(apiObject) {
+    dataStore.updateWeatherData(function(apiObject) {
+      let weatherData = dataStore.getRealtimeWeatherData();
       let tempField = document.getElementById("local_temp");
-      let temp = Math.round(dataStore.data.weatherData.current.temp);
-      tempField.innerHTML = temp.toString() + "&deg";
+      if (weatherData.imperial && weatherData.imperial.temp) {
+        let temp = Number.parseFloat(weatherData.imperial.temp).toFixed(1);
+        tempField.innerHTML = temp.toString() + "&deg";
+      } else {
+        tempField.innerHTML = "?";
+      }
     });
   }
 

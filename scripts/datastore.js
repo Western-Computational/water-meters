@@ -61,8 +61,9 @@
     }.bind(this));
   };
 
-  DataStore.prototype.getWeatherData = function(callback) {
-    var request = 'https://api.openweathermap.org/data/2.5/onecall?lat=36.974800&lon=-122.031970&units=imperial&exclude=minutely,hourly,daily&appid=4530c5f0704984be70de48b60f3ecd42';
+  DataStore.prototype.updateWeatherData = function(callback) {
+    //var request = 'https://api.openweathermap.org/data/2.5/onecall?lat=36.974800&lon=-122.031970&units=imperial&exclude=minutely,hourly,daily&appid=4530c5f0704984be70de48b60f3ecd42';
+    var request = 'https://api.weather.com/v2/pws/observations/current?stationId=KCASANTA3431&format=json&units=e&apiKey=0e45a9b492184b6085a9b492185b6090&numericPrecision=decimal'
     this.callApi(request, function(apiObject) {
       this.data.weatherData = JSON.parse(apiObject);
       callback();
@@ -161,6 +162,13 @@
       }
     }
     return total;
+  };
+
+  DataStore.prototype.getRealtimeWeatherData = function() {
+    if (this.data.weatherData.observations && this.data.weatherData.observations.length > 0) {
+      return this.data.weatherData.observations[0];
+    }
+    return {};
   };
 
   // This code accesses the apiRequest URL and converts
