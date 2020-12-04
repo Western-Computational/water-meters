@@ -209,7 +209,7 @@
 
     var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
     dateAxis.dataFields.date = "End_Time_Stamp_UTC_ms";
-    dateAxis.title.text = "Past 60 days";
+    dateAxis.title.text = "Past 30 days";
     dateAxis.title.fontSize = 16;
   /*
     dateAxis.dateFormats.setKey("minute", "MMM dd\nHH:mm");
