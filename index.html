@@ -15,7 +15,7 @@ https://medium.com/better-programming/build-a-responsive-modern-dashboard-layout
 <body>
 
 <div class="grid">
-  <header class="header">
+  <header class="header unused">
     <i class="fas fa-bars header__menu unused"></i>
     <div class="header__search unused">
       <input class="header__input" placeholder="Search..." />
@@ -40,7 +40,7 @@ https://medium.com/better-programming/build-a-responsive-modern-dashboard-layout
     </div>
   </header>
 
-  <aside class="sidenav">
+  <aside class="sidenav unused">
     <div class="sidenav__brand">
       <i class="fas fa-feather-alt sidenav__brand-icon"></i>
       <a class="sidenav__brand-link" href="#">Ux<span class="text-light">Pro</span></a>
@@ -257,9 +257,9 @@ https://medium.com/better-programming/build-a-responsive-modern-dashboard-layout
           </div>
           <div class="quickview__item">
             <div class="quickview__item-total" id="local_temp">&nbsp;&deg;</div>
-            <div class="quickview__item-description">
+            <div class="quickview__item-description" id="local_desc">
               <i class="fas fa-map-marker-alt"></i>
-              <span class="text-light">Santa Cruz</span>
+              <span class="text-light" id="local_desc_span">Santa Cruz</span>
             </div>
           </div>
         </div>
@@ -415,6 +415,7 @@ https://medium.com/better-programming/build-a-responsive-modern-dashboard-layout
 <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
 <script src="https://www.amcharts.com/lib/4/core.js"></script>
 <script src="https://www.amcharts.com/lib/4/charts.js"></script>
+<script src="scripts/settings.js"></script>
 <script src="scripts/datastore.js"></script>
 <script src="scripts/script.js"></script>
 <script src="scripts/main.js"></script>

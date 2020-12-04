@@ -1,40 +1,20 @@
 (function (window) {
   'use strict';
   var App = window.App;
+  var Settings = App.Settings;
   var DataStore = App.DataStore;
 
   let dataStore = new DataStore();
-  let settings = {};
+  let settings = new Settings();
   const chartdivs = ["chartdiv1", "chartdiv2", "chartdiv3",
     "chartdiv4", "chartdiv5", "chartdiv6"];
 
   $(document).ready(() => {
     console.log("main.js document ready");
-    initializeSettings();
     setupFormElements();
     getWaterData();
     getWeatherData();
   });
-
-  function initializeSettings() {
-    settings = {};
-    settings.units = new Map([
-      ["301", { meterId: "350002883", pulse: 1 }],
-      ["303", { meterId: "350002883", pulse: 2 }],
-      ["305", { meterId: "350002883", pulse: 3 }],
-      ["307", { meterId: "350002885", pulse: 1 }],
-      ["Garden", { meterId: "350002885", pulse: 2}]
-    ]);
-
-    settings.charts = new Map([
-      [ "chartdiv1", { meter: "350002885", pulse: 2, mode: "minutes" } ],
-      [ "chartdiv2", { meter: "350002883", pulse: 1, mode: "minutes" } ],
-      [ "chartdiv3", { meter: "350002883", pulse: 2, mode: "minutes" } ],
-      [ "chartdiv4", { meter: "350002883", pulse: 3, mode: "minutes" } ],
-      [ "chartdiv5", { meter: "350002885", pulse: 1, mode: "minutes" } ],
-      [ "chartdiv6", { meter: "*", pulse: 0, mode: "portions" } ]
-    ]);
-  }
 
   function setupFormElements() {
     const options = ["Minutes", "Days"];
@@ -127,11 +107,19 @@
     dataStore.updateWeatherData(function(apiObject) {
       let weatherData = dataStore.getRealtimeWeatherData();
       let tempField = document.getElementById("local_temp");
+      let descField = document.getElementById("local_desc");
+      let descSpan = document.getElementById("local_desc_span");
       if (weatherData.imperial && weatherData.imperial.temp) {
         let temp = Number.parseFloat(weatherData.imperial.temp).toFixed(1);
         tempField.innerHTML = temp.toString() + "&deg";
       } else {
         tempField.innerHTML = "?";
+      }
+      if (weatherData.stationURL) {
+        var link = document.createElement('a');
+        link.setAttribute('href', weatherData.stationURL);
+        link.innerHTML = descSpan.innerHTML;
+        descField.replaceChild(link, descSpan);
       }
     });
   }

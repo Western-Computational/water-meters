@@ -27,7 +27,7 @@ a {
   position: relative;
   display: grid;
   grid-template-columns: 100%;
-  grid-template-rows: 50px 1fr 50px;
+  grid-template-rows: 0px 1fr 50px;
   grid-template-areas: 'header' 'main' 'footer';
   height: 100vh;
   overflow-x: hidden; }
@@ -577,8 +577,8 @@ a {
 @media only screen and (min-width: 46.875em) {
   .grid {
     display: grid;
-    grid-template-columns: 240px calc(100% - 240px);
-    grid-template-rows: 50px 1fr 50px;
+    grid-template-columns: 0px calc(100% - 0px);
+    grid-template-rows: 0px 1fr 50px;
     grid-template-areas: 'sidenav header' 'sidenav main' 'sidenav footer';
     height: 100vh; }
 

@@ -166,7 +166,11 @@
 
   DataStore.prototype.getRealtimeWeatherData = function() {
     if (this.data.weatherData.observations && this.data.weatherData.observations.length > 0) {
-      return this.data.weatherData.observations[0];
+      var realtimeData = this.data.weatherData.observations[0];
+      if (realtimeData.stationID) {
+        realtimeData.stationURL = "https://www.wunderground.com/dashboard/pws/" + realtimeData.stationID;
+      }
+      return realtimeData;
     }
     return {};
   };
