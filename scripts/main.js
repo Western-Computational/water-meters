@@ -208,8 +208,9 @@
     chart.cursor.lineY.disabled = true;
 
     var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
+    let entryCount = entries.length;
     dateAxis.dataFields.date = "End_Time_Stamp_UTC_ms";
-    dateAxis.title.text = "Past 30 days";
+    dateAxis.title.text = "Past " + entryCount + (entryCount != 1 ? " days" : " day");
     dateAxis.title.fontSize = 16;
   /*
     dateAxis.dateFormats.setKey("minute", "MMM dd\nHH:mm");
