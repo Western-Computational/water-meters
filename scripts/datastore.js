@@ -44,7 +44,7 @@
       let sinceClause = "";
       if (lastTimestamp > 0) {
         let startDateStr = dateStringFromTimestamp(lastTimestamp);
-        let endDateStr = dateStringFromTimestamp(endOfDayTimestmap());
+        let endDateStr = dateStringFromTimestamp(endOfDayTimestamp());
         sinceClause = "&start_date=" + startDateStr + "&end_date=" + endDateStr;
         updateAvailable = startDateStr !== endDateStr;
       }
@@ -98,10 +98,11 @@
 
   DataStore.prototype.getSummaryRangeForMeter = function(meterId, startDate, endDate) {
     const data = this.getSummaryDataForMeter(meterId);
-    if (data && data.entries) {
+    if (data && data.entries &&
+        DataStore.isValidDate(startDate) && DataStore.isValidDate(endDate)) {
       let rangeEntries = [];
-      const start = beginningOfDayTimestmap(startDate);
-      const end = endOfDayTimestmap(endDate);
+      const start = beginningOfDayTimestamp(startDate);
+      const end = endOfDayTimestamp(endDate);
       for (let i = 0; i < data.entries.length; i++) {
         const point = data.entries[i];
         if (point.End_Time_Stamp_UTC_ms > end) {
@@ -161,10 +162,11 @@
     return ts;
   };
 
-  DataStore.prototype.summaryTotalForMeterField = function(meterId, dataField) {
+  DataStore.prototype.summaryTotalForMeterField = function(meterId, dataField, startDate, endDate) {
     let total = 0;
     if (meterId && dataField) {
-      const data = this.getSummaryEntriesForMeter(meterId);
+      const data = DataStore.isValidDate(startDate) && DataStore.isValidDate(endDate) ?
+        this.getSummaryRangeForMeter(meterId, startDate, endDate) : this.getSummaryEntriesForMeter(meterId);
       for (let i = 0; i < data.length; i++) {
         total += (data[i][dataField] || 0);
       }
@@ -305,8 +307,12 @@
      }
   };
 
-   DataStore.getVolumeFromPulseCount = function(pulseCount) {
+  DataStore.getVolumeFromPulseCount = function(pulseCount) {
       return pulseCount * 0.748052;
+  };
+
+  DataStore.isValidDate = function(d) {
+    return d instanceof Date && !isNaN(d);
   };
 
   function dateStringFromTimestamp(timestamp) {
@@ -319,13 +325,13 @@
     return year + month + date + hours + minutes;
   }
 
-  function beginningOfDayTimestmap(date) {
+  function beginningOfDayTimestamp(date) {
     let d = date || new Date();
     d.setHours(0,0,0,0);
     return d.getTime();
   }
 
-  function endOfDayTimestmap(date) {
+  function endOfDayTimestamp(date) {
     let d = date || new Date();
     d.setHours(23,59,59,999);
     return d.getTime();

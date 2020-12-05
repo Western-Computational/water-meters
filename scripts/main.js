@@ -20,13 +20,29 @@
     const options = ["Minutes", "Days"];
 
     chartdivs.forEach(function (chartdiv, index) {
-      let headerLinks = optionLinksForChart(chartdiv);
-      for (let i = 0; i < headerLinks.length; i++) {
-        const cs = settings.charts.get(chartdiv);
-        let optionText = i < options.length && cs.mode !== "portions" ? options[i] : '';
-        headerLinks[i].innerText = optionText;
-        headerLinks[i].onclick = optionText.length > 0 ?
-          function() { setGraphMode(chartdiv, optionText); } : null;
+      const header = cardHeaderForChart(chartdiv);
+      const headerLinks = optionLinksForChart(chartdiv);
+      const cs = settings.charts.get(chartdiv);
+      if (cs.mode !== 'portions') {
+        for (let i = 0; i < headerLinks.length; i++) {
+          const optionText = i < options.length ? options[i] : '';
+          headerLinks[i].innerText = optionText;
+          headerLinks[i].onclick = optionText.length > 0 ?
+            function() { setGraphMode(chartdiv, optionText); } : null;
+        }
+      } else if (headerLinks.length > 1) {
+        const headerLink0 = headerLinks[0];
+        const headerLink1 = headerLinks[1];
+        const dateInput0 = document.createElement('input');
+        dateInput0.setAttribute('type', 'date');
+        dateInput0.setAttribute('id', chartdiv + '_dateInput0');
+        dateInput0.addEventListener('change', handleSummaryPortionsChartDateChange);
+        header.replaceChild(dateInput0, headerLink0);
+        const dateInput1 = document.createElement('input');
+        dateInput1.setAttribute('type', 'date');
+        dateInput1.setAttribute('id', chartdiv + '_dateInput1');
+        dateInput1.addEventListener('change', handleSummaryPortionsChartDateChange);
+        header.replaceChild(dateInput1, headerLink1);
       }
     });
 
@@ -35,12 +51,15 @@
       const refreshLink = refreshLinks[0];
       refreshLink.onclick = function () { refreshData(); };
     }
+  }
 
+  function cardHeaderForChart(chartdiv) {
+    const chartCard = document.getElementById(chartdiv).parentNode.parentNode;
+    return chartCard.querySelector('.card__header');
   }
 
   function optionLinksForChart(chartdiv) {
-    let chartCard = document.getElementById(chartdiv).parentNode.parentNode;
-    let cardHeader = chartCard.querySelector('.card__header');
+    const cardHeader = cardHeaderForChart(chartdiv);
     return cardHeader.getElementsByClassName('card__header-link');
   }
 
@@ -267,13 +286,30 @@
   }
 
   function renderSummaryPortionsChart(chartdiv) {
+    const chartCard = document.getElementById(chartdiv).parentNode;
+    const cardHeader = chartCard.parentNode.querySelector('.card__header');
+    const dateInput0 = document.getElementById(chartdiv + '_dateInput0');
+    const dateInput1 = document.getElementById(chartdiv + '_dateInput1');
+
+//Mon Nov 30 2020 16:00:00 GMT-0800
+//Fri Dec 04 2020 16:00:00 GMT-0800
+// Garden: 647.06
+// 301: 309.70
+// 303: 338.87 (-1.5 for 12/5)
+// 305: 371.03
+// 307: 210.20
+    var firstDate = dateInput0 && dateInput0.value ?
+      startDateFromDateString(dateInput0.value) : null;
+    var lastDate = dateInput1 && dateInput1.value ?
+      endDateFromDateString(dateInput1.value) : null;
+
     let chartData = [];
     for (let [unitId, us] of settings.units) {
       let volField = us.pulse === 1 ? "Volume_1_Diff" : us.pulse === 2 ? "Volume_2_Diff" :
         us.pulse === 3 ? "Volume_3_Diff" : null;
       let dataPoint = {
         "unit": unitId,
-        "data": dataStore.summaryTotalForMeterField(us.meterId, volField),
+        "data": dataStore.summaryTotalForMeterField(us.meterId, volField, firstDate, lastDate),
         "color": meterColor(us.meterId, us.pulse)
       };
       chartData.push(dataPoint);
@@ -288,10 +324,10 @@
     chart.data = chartData;
     chart.innerRadius = am4core.percent(33);
 
-    const firstDate = new Date(dataStore.earliestSummaryTimestamp());
-    const lastDate = new Date(dataStore.latestSummaryTimestamp());
-    const firstDateStr = firstDate.toLocaleDateString("en-US");
-    const lastDateStr = lastDate.toLocaleDateString("en-US");
+    firstDate = firstDate || new Date(dataStore.earliestSummaryTimestamp()); //Fri Nov 06 2020 23:59:59 GMT-0800
+    lastDate = lastDate || new Date(dataStore.latestSummaryTimestamp()); //Sat Dec 05 2020 23:59:59 GMT-0800
+    const firstDateStr = firstDate.toLocaleDateString();
+    const lastDateStr = lastDate.toLocaleDateString();
 
     let label = chart.chartContainer.createChild(am4core.Label);
     label.text = firstDateStr + " to " + lastDateStr;
@@ -308,13 +344,41 @@
     pieSeries.slices.template.strokeOpacity = 1;
     pieSeries.slices.template.tooltipText = "{category}: {value.percent.formatNumber('#.0')}% ({value.formatNumber('#.00')})";
 
-    let chartCard = document.getElementById(chartdiv).parentNode;
-    let cardHeader = chartCard.parentNode.querySelector('.card__header');
     if (cardHeader) {
       let cardTitle = cardHeader.querySelector('.card__header-title');
-      //let status = cardHeader.querySelector('.card__header-status');
       cardTitle.innerHTML = "<strong>Total</strong> Water Use";
-      //status.innerHTML= "Current Use: <strong>" + currentUse + "</strong> gal";
+      dateInput0.setAttribute('value', formatDateInputValue(firstDate));
+      dateInput1.setAttribute('value', formatDateInputValue(lastDate));
+    }
+  }
+
+  function handleSummaryPortionsChartDateChange(e) {
+    //alert(e.target.value);
+    const chartdiv = e.target.id.slice(0, e.target.id.indexOf('_'));
+    if (chartdiv) {
+      const dateInput0 = document.getElementById(chartdiv + '_dateInput0');
+      const dateInput1 = document.getElementById(chartdiv + '_dateInput1');
+      var firstDate = dateInput0 && dateInput0.value ?
+        startDateFromDateString(dateInput0.value) : null;
+      var lastDate = dateInput1 && dateInput1.value ?
+        endDateFromDateString(dateInput1.value) : null;
+
+      if (firstDate && lastDate) {
+        const earliestDate = new Date(dataStore.earliestSummaryTimestamp()); //Fri Nov 06 2020 23:59:59 GMT-0800
+        const latestDate = new Date(dataStore.latestSummaryTimestamp()); //Sat Dec 05 2020 23:59:59 GMT-0800
+        earliestDate.setSeconds(firstDate.getSeconds(), firstDate.getMilliseconds());
+        latestDate.setSeconds(lastDate.getSeconds(), lastDate.getMilliseconds());
+        const firstTime = firstDate.getTime();
+        const earliestTime = earliestDate.getTime();
+        const lastTime = lastDate.getTime();
+        const latestTime = latestDate.getTime();
+        if ((firstTime < earliestTime) || (lastTime > latestTime)) {
+          alert("Can't yet retrieve new data for chart!");
+          return;
+        }
+      }
+
+      renderSummaryPortionsChart(chartdiv);
     }
   }
 
@@ -402,6 +466,41 @@
       return "0";
     }
     return volume.toFixed(2);
+  }
+
+  function formatDateInputValue(date) {
+    const d = date || Date();
+    let month = '' + (d.getMonth() + 1),
+        day = '' + d.getDate(),
+        year = d.getFullYear();
+
+    if (month.length < 2) {
+        month = '0' + month;
+    }
+    if (day.length < 2) {
+        day = '0' + day;
+    }
+    return [year, month, day].join('-');
+  }
+
+  function startDateFromDateString(dateString) {
+    const utcDate = new Date(dateString);
+    var date = new Date();
+    date.setYear(utcDate.getUTCFullYear());
+    date.setMonth(utcDate.getUTCMonth());
+    date.setDate(utcDate.getUTCDate());
+    date.setHours(0,0,0,0);
+    return date;
+  }
+
+  function endDateFromDateString(dateString) {
+    const utcDate = new Date(dateString);
+    var date = new Date();
+    date.setYear(utcDate.getUTCFullYear());
+    date.setMonth(utcDate.getUTCMonth());
+    date.setDate(utcDate.getUTCDate());
+    date.setHours(23,59,59,999);
+    return date;
   }
 
 })(window);
