@@ -70,6 +70,10 @@
     }.bind(this));
   };
 
+  DataStore.prototype.getRealtimeDataTimestamp = function() {
+    return this.data.waterData.realtimeData.timestamp;
+  };
+
   DataStore.prototype.getRealtimeDataForMeter = function(meterId) {
     return this.data.waterData.realtimeData.get(meterId);
   };
@@ -77,6 +81,10 @@
   DataStore.prototype.getRealtimeEntriesForMeter = function(meterId) {
     const data = this.getRealtimeDataForMeter(meterId);
     return (data && data.entries) || null;
+  };
+
+  DataStore.prototype.getSummaryDataTimestamp = function() {
+    return this.data.waterData.summaryData.timestamp;
   };
 
   DataStore.prototype.getSummaryDataForMeter = function(meterId) {
@@ -195,6 +203,8 @@
     let readSets = serverData.readMeter.ReadSet;
     if (!readSets) { return; }
 
+    this.data.waterData.realtimeData.timestamp = new Date();
+
     // Copy all readings to meter-indexed map
     for (let i = 0; i < readSets.length; i++) {
       const meterId = readSets[i].Meter.toString();
@@ -249,6 +259,8 @@
 
   DataStore.prototype.processSummaryWaterData = function(rawResponse) {
      let serverData = JSON.parse(rawResponse);
+
+     this.data.waterData.summaryData.timestamp = new Date();
 
      // Sort all data by ascending time
      serverData.sort(function(a,b) {

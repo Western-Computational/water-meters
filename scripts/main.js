@@ -63,6 +63,12 @@
     const cs5 = settings.charts.get("chartdiv5");
 
     dataStore.updateWaterData(function() {
+      // Realtime data callback
+      let timestamp = dataStore.getRealtimeDataTimestamp();
+      if (timestamp) {
+        let updateField = document.getElementById("welcome_subtitle");
+        updateField.innerHTML = "Data updated: " + timestamp.toLocaleString();
+      }
       if (cs1.meter && cs1.pulse && (cs1.mode || defMode) === "minutes") {
         renderRealtimeChart(cs1.meter, cs1.pulse, "chartdiv1");
       }
@@ -79,6 +85,7 @@
         renderRealtimeChart(cs5.meter, cs5.pulse, "chartdiv5");
       }
     }, function() {
+      // Summary data callback
       if (cs1.meter && cs1.pulse && (cs1.mode || defMode) === "days") {
         renderSummaryChart(cs1.meter, cs1.pulse, "chartdiv1");
       }

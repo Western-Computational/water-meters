@@ -26,7 +26,7 @@
       [ "chartdiv5", { meter: "350002885", pulse: 1, mode: "minutes" } ],
       [ "chartdiv6", { meter: "*", pulse: 0, mode: "portions" } ]
     ]);
-  }
+  };
 
   App.Settings = Settings;
   window.App = App;
