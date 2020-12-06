@@ -234,9 +234,9 @@
     chart.cursor.lineY.disabled = true;
 
     var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
-    let entryCount = entries.length;
+    let totalDays = dataStore.summaryDayCountForMeter(meterId);
     dateAxis.dataFields.date = "End_Time_Stamp_UTC_ms";
-    dateAxis.title.text = "Past " + entryCount + (entryCount != 1 ? " days" : " day");
+    dateAxis.title.text = "Past " + totalDays + (totalDays != 1 ? " days" : " day");
     dateAxis.title.fontSize = 16;
   /*
     dateAxis.dateFormats.setKey("minute", "MMM dd\nHH:mm");
@@ -353,26 +353,21 @@
   }
 
   function handleSummaryPortionsChartDateChange(e) {
-    //alert(e.target.value);
     const chartdiv = e.target.id.slice(0, e.target.id.indexOf('_'));
     if (chartdiv) {
       const dateInput0 = document.getElementById(chartdiv + '_dateInput0');
       const dateInput1 = document.getElementById(chartdiv + '_dateInput1');
-      var firstDate = dateInput0 && dateInput0.value ?
+      const reqFirstDate = dateInput0 && dateInput0.value ?
         startDateFromDateString(dateInput0.value) : null;
-      var lastDate = dateInput1 && dateInput1.value ?
+      const reqLastDate = dateInput1 && dateInput1.value ?
         endDateFromDateString(dateInput1.value) : null;
 
-      if (firstDate && lastDate) {
-        const earliestDate = new Date(dataStore.earliestSummaryTimestamp()); //Fri Nov 06 2020 23:59:59 GMT-0800
-        const latestDate = new Date(dataStore.latestSummaryTimestamp()); //Sat Dec 05 2020 23:59:59 GMT-0800
-        earliestDate.setSeconds(firstDate.getSeconds(), firstDate.getMilliseconds());
-        latestDate.setSeconds(lastDate.getSeconds(), lastDate.getMilliseconds());
-        const firstTime = firstDate.getTime();
-        const earliestTime = earliestDate.getTime();
-        const lastTime = lastDate.getTime();
-        const latestTime = latestDate.getTime();
-        if ((firstTime < earliestTime) || (lastTime > latestTime)) {
+      if (reqFirstDate && reqLastDate) {
+        // Compare requested vs current range, ignoring time
+        const curFirstDate = new Date(dataStore.earliestSummaryTimestamp());
+        const curLastDate = new Date(dataStore.latestSummaryTimestamp());
+        if ((reqFirstDate.setHours(0,0,0,0) < curFirstDate.setHours(0,0,0,0)) ||
+            (reqLastDate.setHours(0,0,0,0) > curLastDate.setHours(0,0,0,0))) {
           alert("Can't yet retrieve new data for chart!");
           return;
         }

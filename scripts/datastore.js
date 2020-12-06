@@ -1,6 +1,9 @@
 (function (window) {
   'use strict';
-  var App = window.App || {};
+  const App = window.App || {};
+  const Settings = App.Settings;
+
+  const settings = new Settings();
 
   function DataStore() {
     this.data = {
@@ -12,7 +15,7 @@
     };
   }
 
-  DataStore.prototype.updateWaterData = function(realtimeCallback, summaryCallback) {
+  DataStore.prototype.updateWaterData = function(realtimeCallback, summaryCallback, summaryStartDate, summaryEndDate) {
     const lastRealtimeEntry1 = this.lastRealtimeEntryForMeter("350002883");
     const lastRealtimeEntry2 = this.lastRealtimeEntryForMeter("350002885");
     let timestamp1 = (lastRealtimeEntry1 && lastRealtimeEntry1['Time_Stamp_UTC_ms']) || 0;
@@ -34,32 +37,39 @@
         this.data.waterData.summaryData.get("350002885").pop();
       }
       */
-      const lastSummaryEntry1 = this.lastSummaryEntryForMeter("350002883");
-      const lastSummaryEntry2 = this.lastSummaryEntryForMeter("350002885");
-      let timestamp1 = (lastSummaryEntry1 && lastSummaryEntry1['End_Time_Stamp_UTC_ms']) || 0;
-      let timestamp2 = (lastSummaryEntry2 && lastSummaryEntry2['End_Time_Stamp_UTC_ms']) || 0;
       // Get the earliest of the last timestamps to request updates
-      let lastTimestamp = timestamp1 < timestamp2 ? timestamp1 : timestamp2;
+      let lastTimestamp = this.earliestLastSummaryTimestamp() || 0;
       let updateAvailable = true;
-      let sinceClause = "";
+      let dateRangeClause = "";
+      let limitClause = "&limit=10";  // default 60 days of summary data
       if (lastTimestamp > 0) {
         let startDateStr = dateStringFromTimestamp(lastTimestamp);
         let endDateStr = dateStringFromTimestamp(endOfDayTimestamp());
-        sinceClause = "&start_date=" + startDateStr + "&end_date=" + endDateStr;
+        dateRangeClause = "&start_date=" + startDateStr + "&end_date=" + endDateStr;
         updateAvailable = startDateStr !== endDateStr;
       }
       if (updateAvailable) {
-        let summaryRequest = "https://summary.ekmpush.com/summary?meters=350002883~350002885&key=NjUyNDQ0Njc6Y2E5b0hRVGc&ver=v4&format=json&report=dy&limit=60&fields=Pulse_Cnt*&bulk=1&normalize=1&timezone=America~Los_Angeles" +
-          sinceClause;
-          this.callApi(summaryRequest, function(apiResponse) {
-            this.processSummaryWaterData(apiResponse);
-            summaryCallback();
-          }.bind(this));
+        const metersClause = this.constructMetersClause();
+        const summaryRequest = "https://summary.ekmpush.com/summary?" + metersClause +
+          "&key=NjUyNDQ0Njc6Y2E5b0hRVGc&ver=v4&format=json&report=dy&fields=Pulse_Cnt*&bulk=1&normalize=1&timezone=America~Los_Angeles" +
+            limitClause + dateRangeClause;
+        this.callApi(summaryRequest, function(apiResponse) {
+          this.processSummaryWaterData(apiResponse);
+          summaryCallback();
+        }.bind(this));
       } else {
         summaryCallback();  // let caller update on existing data if they want
       }
     }.bind(this));
   };
+
+  DataStore.prototype.constructMetersClause = function() {
+    let clause = '';
+    settings.meters.forEach(function (meterId, index) {
+      clause += (clause.length > 0 ? '~' : '') + meterId;
+    });
+    return clause.length > 0 ? 'meters=' + clause : '';
+  }
 
   DataStore.prototype.updateWeatherData = function(callback) {
     //var request = 'https://api.openweathermap.org/data/2.5/onecall?lat=36.974800&lon=-122.031970&units=imperial&exclude=minutely,hourly,daily&appid=4530c5f0704984be70de48b60f3ecd42';
@@ -124,21 +134,34 @@
     return null;
   };
 
-  DataStore.prototype.firstSummaryEntryForMeter = function(meter) {
-    const entries = this.getSummaryEntriesForMeter(meter);
+  DataStore.prototype.firstSummaryEntryForMeter = function(meterId) {
+    const entries = this.getSummaryEntriesForMeter(meterId);
     if (entries && entries.length > 0) {
       return entries[0];
     }
     return null;
   };
 
-  DataStore.prototype.lastSummaryEntryForMeter = function(meter) {
-    const entries = this.getSummaryEntriesForMeter(meter);
+  DataStore.prototype.lastSummaryEntryForMeter = function(meterId) {
+    const entries = this.getSummaryEntriesForMeter(meterId);
     if (entries && entries.length > 0) {
       return entries[entries.length-1];
     }
     return null;
   };
+
+  DataStore.prototype.summaryDayCountForMeter = function(meterId) {
+    let count = 0;
+    const firstEntry = this.firstSummaryEntryForMeter(meterId);
+    if (firstEntry && firstEntry.End_Time_Stamp_UTC_ms) {
+      const firstTime = firstEntry.End_Time_Stamp_UTC_ms;
+      const lastEntry = this.lastSummaryEntryForMeter(meterId);
+      const lastTime = lastEntry && lastEntry.End_Time_Stamp_UTC_ms ?
+        lastEntry.End_Time_Stamp_UTC_ms : firstTime;
+      count = Math.max(0, Math.round((lastTime - firstTime)/(1000*60*60*24))) + 1;
+    }
+    return count;
+  }
 
   DataStore.prototype.earliestSummaryTimestamp = function() {
     let ts;
@@ -156,6 +179,20 @@
     for (let [meterId, data] of this.data.waterData.summaryData) {
       const lastEntry = this.lastSummaryEntryForMeter(meterId);
       if (!ts || lastEntry.End_Time_Stamp_UTC_ms > ts) {
+        ts = lastEntry.End_Time_Stamp_UTC_ms;
+      }
+    }
+    return ts;
+  };
+
+  // Compare the last timestamp for all meters, and return the
+  // earliest of these.  Used as the starting timestamp for
+  // incremental update requests for an existing data set.
+  DataStore.prototype.earliestLastSummaryTimestamp = function() {
+    let ts;
+    for (let [meterId, data] of this.data.waterData.summaryData) {
+      const lastEntry = this.lastSummaryEntryForMeter(meterId);
+      if (!ts || lastEntry.End_Time_Stamp_UTC_ms < ts) {
         ts = lastEntry.End_Time_Stamp_UTC_ms;
       }
     }
@@ -286,10 +323,8 @@
        if (lastPoint && point.End_Time_Stamp_UTC_ms <= lastPoint.End_Time_Stamp_UTC_ms) {
          console.log("Skipping old/duplicate summary point at index [" + i + "]");
        } else {
-         point.Volume_1_Diff = DataStore.getVolumeFromPulseCount(point.Pulse_Cnt_1_Diff);
-         point.Volume_2_Diff = DataStore.getVolumeFromPulseCount(point.Pulse_Cnt_2_Diff);
-         point.Volume_3_Diff = DataStore.getVolumeFromPulseCount(point.Pulse_Cnt_3_Diff);
-         meterPoints.push(point);
+         let dataPoint = this.processSummaryWaterPoint(point);
+         meterPoints.push(dataPoint);
          let mc = meterCounts.get(meterId);
          mc.added++;
          mc.vol1 += point.Volume_1_Diff;
@@ -305,6 +340,14 @@
        console.log("Volume totals: pulse1=" + value.vol1 + ", pulse2=" + value.vol2 +
         ", pulse3=" + value.vol3);
      }
+  };
+
+  DataStore.prototype.processSummaryWaterPoint = function(serverPoint) {
+    let dataPoint = serverPoint;
+    dataPoint.Volume_1_Diff = DataStore.getVolumeFromPulseCount(serverPoint.Pulse_Cnt_1_Diff);
+    dataPoint.Volume_2_Diff = DataStore.getVolumeFromPulseCount(serverPoint.Pulse_Cnt_2_Diff);
+    dataPoint.Volume_3_Diff = DataStore.getVolumeFromPulseCount(serverPoint.Pulse_Cnt_3_Diff);
+    return dataPoint;
   };
 
   DataStore.getVolumeFromPulseCount = function(pulseCount) {
