@@ -368,12 +368,13 @@
         const curLastDate = new Date(dataStore.latestSummaryTimestamp());
         if ((reqFirstDate.setHours(0,0,0,0) < curFirstDate.setHours(0,0,0,0)) ||
             (reqLastDate.setHours(0,0,0,0) > curLastDate.setHours(0,0,0,0))) {
-          alert("Can't yet retrieve new data for chart!");
-          return;
+          dataStore.updateSummaryWaterData(function() {
+            renderSummaryPortionsChart(chartdiv);
+          }, reqFirstDate, reqLastDate);
+        } else {
+          renderSummaryPortionsChart(chartdiv);
         }
       }
-
-      renderSummaryPortionsChart(chartdiv);
     }
   }
 
