@@ -303,6 +303,10 @@
     var lastDate = dateInput1 && dateInput1.value ?
       endDateFromDateString(dateInput1.value) : null;
 
+    if (firstDate > lastDate) {
+      return;
+    }
+
     let chartData = [];
     for (let [unitId, us] of settings.units) {
       let volField = us.pulse === 1 ? "Volume_1_Diff" : us.pulse === 2 ? "Volume_2_Diff" :

@@ -44,10 +44,15 @@
     */
     // The default is to query from the earliest "last" timestamp to the
     // current end of day
-    const startTimestamp = startDate ? beginningOfDayTimestamp(startDate) :
-      (this.earliestLastSummaryTimestamp() || 0);
-    const endTimestamp = endOfDayTimestamp(endDate);
+    const maxEndTimestamp = endOfDayTimestamp();
+    const endTimestamp = endDate ?
+      Math.min(endOfDayTimestamp(endDate), maxEndTimestamp) : maxEndTimestamp;
     const endDateStr = dateStringFromTimestamp(endTimestamp);
+
+    let startTimestamp = startDate ? beginningOfDayTimestamp(startDate) :
+      (this.earliestLastSummaryTimestamp() || 0);
+    startTimestamp = Math.min(startTimestamp,
+      beginningOfDayTimestamp(new Date(endTimestamp))); // max: start of endDate
 
     const metersClause = this.constructMetersClause();
     let dateRangeClause = "";
@@ -58,7 +63,7 @@
         limitClause = "&limit=" + DataStore.dayCount(startTimestamp, endTimestamp);
     } else {
       dateRangeClause = "&end_date=" + endDateStr;
-      limitClause = "&limit=10";  // default 60 days of summary data
+      limitClause = "&limit=30";  // default 30 days of summary data
     }
 
     const summaryRequest = "https://summary.ekmpush.com/summary?" + metersClause +
@@ -232,16 +237,17 @@
   // This code accesses the apiRequest URL and converts
   // the contents to a usable JSON object named apiObject
   DataStore.prototype.callApi = function(apiRequest,callback) {
-      var xhttp = new XMLHttpRequest();
+    console.log("API Call: " + apiRequest);
+    var xhttp = new XMLHttpRequest();
 
-      xhttp.onreadystatechange = function() {
-        if (xhttp.readyState == 4 && xhttp.status == 200) {
-          //var jsonObject = JSON.parse(xhttp.responseText);
-          callback(xhttp.responseText);
-        }
-      };
-      xhttp.open("GET", apiRequest, true);
-      xhttp.send();
+    xhttp.onreadystatechange = function() {
+      if (xhttp.readyState == 4 && xhttp.status == 200) {
+        //var jsonObject = JSON.parse(xhttp.responseText);
+        callback(xhttp.responseText);
+      }
+    };
+    xhttp.open("GET", apiRequest, true);
+    xhttp.send();
   }
 
   DataStore.prototype.processRealtimeWaterData = function(rawResponse) {
