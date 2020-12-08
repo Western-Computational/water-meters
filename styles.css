@@ -505,7 +505,8 @@ a {
   align-self: flex-start;
   background-color: rgba(255, 255, 255, 0.5);
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 2px; }
+  border-radius: 2px;
+  opacity: 0.0; }
 
 .settings__block {
   display: flex;
