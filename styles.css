@@ -603,9 +603,6 @@ a {
 
   .main-header__intro-wrapper {
     padding: 0 30px; }
-  .main-header::before {
-    opacity: 1.0;
-  }
 
   .header__menu {
     display: none; }
@@ -624,5 +621,11 @@ a {
   .main-header__welcome {
     align-items: flex-start; }
   }
+
+@media only screen and (min-width: 1024px) {
+  .main-header::before {
+    opacity: 1.0;
+  }
+}
 
 /*# sourceMappingURL=styles.css.map */
