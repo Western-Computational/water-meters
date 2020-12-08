@@ -485,6 +485,9 @@
 
   function startDateFromDateString(dateString) {
     const utcDate = new Date(dateString);
+    if (!DataStore.isValidDate(utcDate)) {
+      return null;
+    }
     var date = new Date();
     date.setYear(utcDate.getUTCFullYear());
     date.setMonth(utcDate.getUTCMonth());
@@ -495,6 +498,9 @@
 
   function endDateFromDateString(dateString) {
     const utcDate = new Date(dateString);
+    if (!DataStore.isValidDate(utcDate)) {
+      return null;
+    }
     var date = new Date();
     date.setYear(utcDate.getUTCFullYear());
     date.setMonth(utcDate.getUTCMonth());
