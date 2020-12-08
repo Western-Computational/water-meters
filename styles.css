@@ -285,9 +285,20 @@ a {
   justify-content: space-between;
   height: 300px;
   color: #000;
-  background-size: cover;
-  background-image: url("images/mission_drawing.jpg");
+  background-color: rgba(255,255,255,0.0);
   margin-bottom: 20px; }
+  .main-header::before {
+    content: "";
+    background-size: cover;
+    background-image: url("images/mission_drawing.jpg");
+    opacity: 0.3;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    position: absolute;
+    z-index: 0;
+  }
   .main-header__intro-wrapper {
     display: flex;
     flex: 1;
@@ -298,7 +309,8 @@ a {
     padding: 12px 30px;
     background: rgba(255, 255, 255, 0.12);
     font-size: 26px;
-    letter-spacing: 1px; }
+    letter-spacing: 1px;
+    z-index: 1; }
   .main-header__welcome {
     display: flex;
     flex-direction: column;
@@ -321,7 +333,8 @@ a {
       margin-bottom: 2px;
       font-size: 32px; }
     .quickview__item-description {
-      font-size: 16px;
+      font-size: 18px;
+      font-weight: bold;
       text-align: center; }
 
 .main-overview {
@@ -590,6 +603,9 @@ a {
 
   .main-header__intro-wrapper {
     padding: 0 30px; }
+  .main-header::before {
+    opacity: 1.0;
+  }
 
   .header__menu {
     display: none; }
@@ -597,7 +613,8 @@ a {
     margin-left: 20px; }
   .header__avatar {
     width: 40px;
-    height: 40px; } }
+    height: 40px; }
+  }
 @media only screen and (min-width: 65.625em) {
   .main__cards {
     column-count: 2; }
@@ -605,6 +622,7 @@ a {
   .main-header__intro-wrapper {
     flex-direction: row; }
   .main-header__welcome {
-    align-items: flex-start; } }
+    align-items: flex-start; }
+  }
 
 /*# sourceMappingURL=styles.css.map */
