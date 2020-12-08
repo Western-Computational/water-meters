@@ -584,7 +584,7 @@ a {
     color: #e74c3c; }
   .footer__signature {
     color: #1BBAE1;
-    cursor: pointer;
+    /*cursor: pointer;*/
     font-weight: bold; }
 
 @media only screen and (min-width: 46.875em) {
